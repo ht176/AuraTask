@@ -72,9 +72,7 @@ async function handleFileImport(e: Event) {
     <!-- 头部品牌 -->
     <div class="p-4 pb-2 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <Sparkles class="w-4 h-4 text-white" />
-        </div>
+        <img src="/favicon.svg" alt="AuraTask" class="w-8 h-8 rounded-xl shadow-lg shadow-indigo-500/20 object-contain hover:scale-105 transition-transform" />
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
             AuraTask

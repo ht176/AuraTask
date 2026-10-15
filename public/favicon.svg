@@ -1,123 +1,100 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- 背景：纯净深邃黑曜石渐变 -->
-    <radialGradient id="bgObsidian" cx="50%" cy="35%" r="70%">
-      <stop offset="0%" stop-color="#151821" />
-      <stop offset="50%" stop-color="#0c0e14" />
-      <stop offset="100%" stop-color="#050608" />
+    <!-- 纯粹黑曜石背景渐变 -->
+    <radialGradient id="bgObsidian" cx="50%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#181c2b" />
+      <stop offset="45%" stop-color="#0e1019" />
+      <stop offset="100%" stop-color="#05060a" />
     </radialGradient>
 
-    <!-- 极光青绿流体主渐变 (Aurora Vivid Flow) -->
-    <linearGradient id="auroraHeadband" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34d399" />
-      <stop offset="35%" stop-color="#10b981" />
-      <stop offset="70%" stop-color="#06b6d4" />
-      <stop offset="100%" stop-color="#3b82f6" />
+    <!-- 顶部高光倒角 -->
+    <linearGradient id="bevelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.22)" />
+      <stop offset="40%" stop-color="rgba(255,255,255,0.05)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0.0)" />
     </linearGradient>
 
-    <!-- 耳罩外环光泽 -->
-    <linearGradient id="earcupLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#059669" />
+    <!-- 专注流转环 (Pomodoro & Progress Focus Arc) -->
+    <linearGradient id="focusRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="35%" stop-color="#6366f1" />
+      <stop offset="70%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#10b981" />
     </linearGradient>
 
-    <linearGradient id="earcupRight" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- 待办完成对勾 (Soaring Checkmark) 渐变 -->
+    <linearGradient id="checkGrad" x1="15%" y1="85%" x2="90%" y2="15%">
       <stop offset="0%" stop-color="#06b6d4" />
-      <stop offset="100%" stop-color="#0284c7" />
+      <stop offset="45%" stop-color="#6366f1" />
+      <stop offset="85%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#f43f5e" />
     </linearGradient>
 
-    <!-- 律动音波条渐变 -->
-    <linearGradient id="waveGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#059669" />
-      <stop offset="50%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#38bdf8" />
-    </linearGradient>
-
-    <!-- 柔和辉光滤镜 -->
-    <filter id="auroraGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="22" result="blur" />
+    <!-- 辉光滤镜 -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
 
-    <filter id="ambientLight" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="50" />
+    <filter id="ambientLight" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="60" />
+    </filter>
+
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.55" />
     </filter>
   </defs>
 
   <!-- 1. Apple 风格超椭圆圆角底座 (Squircle) -->
   <rect x="24" y="24" width="464" height="464" rx="116" fill="url(#bgObsidian)" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- 内部精致微光内框 -->
+  <rect x="26" y="26" width="460" height="460" rx="114" fill="none" stroke="url(#bevelGrad)" stroke-width="2" />
 
-  <!-- 2. 环境氛围光晕 (微光透射，极富质感) -->
-  <circle cx="256" cy="270" r="140" fill="#10b981" opacity="0.16" filter="url(#ambientLight)" />
-  <circle cx="256" cy="230" r="120" fill="#06b6d4" opacity="0.12" filter="url(#ambientLight)" />
+  <!-- 2. 环境氛围光晕 (极光双色柔光散射) -->
+  <circle cx="210" cy="280" r="140" fill="#6366f1" opacity="0.22" filter="url(#ambientLight)" />
+  <circle cx="310" cy="220" r="130" fill="#06b6d4" opacity="0.20" filter="url(#ambientLight)" />
 
-  <!-- 3. 耳机与音浪核心图形 (极具辨识度的现代高保真音乐符号) -->
-  <g filter="url(#auroraGlow)">
-    <!-- (1) 头戴耳机梁弧线 (Headphone Arch) - 极其洗练优美的几何厚弧 -->
-    <path d="M 124 260
-             C 124 135, 388 135, 388 260"
-          fill="none"
-          stroke="url(#auroraHeadband)"
-          stroke-width="26"
-          stroke-linecap="round" />
-
-    <!-- 头戴耳机内衬金属细线，增加工业设计精致感 -->
-    <path d="M 148 240
-             C 148 152, 364 152, 364 240"
-          fill="none"
-          stroke="rgba(255,255,255,0.22)"
-          stroke-width="3"
-          stroke-linecap="round" />
-
-    <!-- (2) 左侧胶囊耳罩 (Left Earcup) -->
-    <g transform="translate(112, 275) rotate(-6)">
-      <!-- 外壳 -->
-      <rect x="-24" y="-56" width="48" height="112" rx="24" fill="url(#earcupLeft)" />
-      <!-- 金属转轴扣 -->
-      <rect x="-10" y="-72" width="20" height="20" rx="6" fill="#10b981" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
-      <!-- 内耳垫暗区 -->
-      <rect x="-14" y="-44" width="28" height="88" rx="14" fill="#0b1318" />
-      <!-- 中心极光音轨线 -->
-      <line x1="0" y1="-26" x2="0" y2="26" stroke="#34d399" stroke-width="4" stroke-linecap="round" opacity="0.9" />
-    </g>
-
-    <!-- (3) 右侧胶囊耳罩 (Right Earcup) -->
-    <g transform="translate(400, 275) rotate(6)">
-      <!-- 外壳 -->
-      <rect x="-24" y="-56" width="48" height="112" rx="24" fill="url(#earcupRight)" />
-      <!-- 金属转轴扣 -->
-      <rect x="-10" y="-72" width="20" height="20" rx="6" fill="#06b6d4" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
-      <!-- 内耳垫暗区 -->
-      <rect x="-14" y="-44" width="28" height="88" rx="14" fill="#08141d" />
-      <!-- 中心极光音轨线 -->
-      <line x1="0" y1="-26" x2="0" y2="26" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" opacity="0.9" />
-    </g>
-
-    <!-- (4) 耳机中央跳动的高保真动态音频律动 (Pulse Sound Wave / Equalizer Bars) -->
-    <!-- 9 根精雕细琢的圆角音浪柱，完美居中，高度错落起伏，充满跃动旋律感 -->
-    <g transform="translate(256, 275)">
-      <!-- 中心主频峰柱 (最高 130px) -->
-      <rect x="-9"   y="-68" width="18" height="136" rx="9" fill="url(#waveGrad)" />
-      
-      <!-- 第 2 级 (对称 100px) -->
-      <rect x="-35"  y="-52" width="17" height="104" rx="8.5" fill="url(#waveGrad)" opacity="0.95" />
-      <rect x="18"   y="-52" width="17" height="104" rx="8.5" fill="url(#waveGrad)" opacity="0.95" />
-
-      <!-- 第 3 级 (对称 72px) -->
-      <rect x="-60"  y="-38" width="16" height="76"  rx="8"   fill="url(#waveGrad)" opacity="0.88" />
-      <rect x="44"   y="-38" width="16" height="76"  rx="8"   fill="url(#waveGrad)" opacity="0.88" />
-
-      <!-- 第 4 级 (对称 46px) -->
-      <rect x="-83"  y="-24" width="15" height="48"  rx="7.5" fill="url(#waveGrad)" opacity="0.75" />
-      <rect x="68"   y="-24" width="15" height="48"  rx="7.5" fill="url(#waveGrad)" opacity="0.75" />
-
-      <!-- 第 5 级 (两翼微波 26px) -->
-      <rect x="-104" y="-14" width="14" height="28"  rx="7"   fill="url(#waveGrad)" opacity="0.55" />
-      <rect x="90"   y="-14" width="14" height="28"  rx="7"   fill="url(#waveGrad)" opacity="0.55" />
-    </g>
+  <!-- 3. 背景待办清单条状律动卡片 (象征高效规划与条理) -->
+  <g opacity="0.32">
+    <rect x="130" y="160" width="80" height="12" rx="6" fill="#6366f1" />
+    <rect x="130" y="340" width="100" height="12" rx="6" fill="#38bdf8" />
   </g>
 
-  <!-- 4. 纯净极简高光粒子 (灵动点睛之笔) -->
-  <circle cx="340" cy="145" r="4.5" fill="#ffffff" opacity="0.9" />
-  <circle cx="172" cy="145" r="3.5" fill="#a7f3d0" opacity="0.8" />
+  <!-- 4. 专注与进度律动圆环 (Focus & Pomodoro Arc) -->
+  <path d="M 175 335 A 125 125 0 1 1 350 320"
+        fill="none"
+        stroke="url(#focusRingGrad)"
+        stroke-width="24"
+        stroke-linecap="round"
+        opacity="0.95"
+        filter="url(#dropShadow)" />
+
+  <!-- 5. 核心图腾：极速飞跃待办勾选 (Hero Aura Checkmark) -->
+  <g filter="url(#dropShadow)">
+    <path d="M 160 258 L 236 334 L 366 172"
+          fill="none"
+          stroke="url(#checkGrad)"
+          stroke-width="36"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          filter="url(#neonGlow)" />
+
+    <!-- 顶部高光勾勒细线，增强 3D 悬浮与玻璃晶体质感 -->
+    <path d="M 166 256 L 236 326 L 360 178"
+          fill="none"
+          stroke="rgba(255,255,255,0.45)"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-linejoin="round" />
+  </g>
+
+  <!-- 6. 成功与成就之星 (Achievement Sparkle Star) -->
+  <g transform="translate(382, 154)">
+    <path d="M 0 -18 Q 0 0 18 0 Q 0 0 0 18 Q 0 0 -18 0 Q 0 0 0 -18 Z" fill="#ffffff" filter="url(#neonGlow)" />
+    <circle cx="0" cy="0" r="4" fill="#ffffff" />
+  </g>
+
+  <!-- 次级成就微光点 -->
+  <circle cx="140" cy="200" r="3.5" fill="#38bdf8" opacity="0.8" />
+  <circle cx="360" cy="380" r="4.5" fill="#10b981" opacity="0.85" />
 </svg>
