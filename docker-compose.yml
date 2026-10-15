@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  auratask:
+    build: .
+    container_name: auratask
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001

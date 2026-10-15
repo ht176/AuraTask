@@ -1,0 +1,143 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+import DesktopSidebar from './components/DesktopSidebar.vue'
+import TaskListView from './components/TaskListView.vue'
+import EisenhowerMatrix from './components/EisenhowerMatrix.vue'
+import KanbanBoard from './components/KanbanBoard.vue'
+import TaskDetailDrawer from './components/TaskDetailDrawer.vue'
+import QuickAddModal from './components/QuickAddModal.vue'
+import PomodoroModal from './components/PomodoroModal.vue'
+import MiniTodoWindow from './components/MiniTodoWindow.vue'
+import WindowControls from './components/WindowControls.vue'
+import ServerSettingsModal from './components/ServerSettingsModal.vue'
+import { useTaskStore } from './stores/task'
+import { usePomodoroStore } from './stores/pomodoro'
+import { useServerStore } from './stores/server'
+import { Search } from 'lucide-vue-next'
+
+const taskStore = useTaskStore()
+const pomodoroStore = usePomodoroStore()
+const serverStore = useServerStore()
+
+function handleKeyDown(e: KeyboardEvent) {
+  const target = e.target as HTMLElement
+  const isInput = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+
+  // Cmd / Ctrl + K 唤出极速录入框
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    taskStore.isQuickAddOpen = !taskStore.isQuickAddOpen
+    return
+  }
+
+  // Cmd / Ctrl + Shift + P 唤出番茄钟
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
+    e.preventDefault()
+    taskStore.isPomodoroOpen = !taskStore.isPomodoroOpen
+    return
+  }
+
+  // Esc 键关闭所有弹窗/抽屉
+  if (e.key === 'Escape') {
+    if (taskStore.isQuickAddOpen) {
+      taskStore.isQuickAddOpen = false
+      return
+    }
+    if (taskStore.isPomodoroOpen) {
+      taskStore.isPomodoroOpen = false
+      return
+    }
+    if (taskStore.selectedTaskId) {
+      taskStore.selectedTaskId = null
+      return
+    }
+  }
+
+  if (isInput) return
+
+  // 快捷键视图切换: 1~5
+  if (!e.metaKey && !e.ctrlKey) {
+    if (e.key === '1') taskStore.activeView = 'today'
+    if (e.key === '2') taskStore.activeView = 'inbox'
+    if (e.key === '3') taskStore.activeView = 'upcoming'
+    if (e.key === '4') taskStore.activeView = 'matrix'
+    if (e.key === '5') taskStore.activeView = 'kanban'
+  }
+}
+
+onMounted(() => {
+  serverStore.loadConfig()
+  taskStore.init()
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
+</script>
+
+<template>
+  <div class="w-screen h-screen overflow-hidden bg-[#07080d] text-neutral-100 flex flex-col font-sans select-none">
+    <!-- 迷你桌面便签浮窗视图 -->
+    <template v-if="taskStore.isMiniMode">
+      <MiniTodoWindow />
+    </template>
+
+    <!-- 完整主界面视图 -->
+    <template v-else>
+      <!-- 顶部自定义无边框拖拽栏 -->
+      <header
+        data-tauri-drag-region
+        class="h-10 px-3 bg-[#0a0c13]/80 border-b border-white/5 flex items-center justify-between select-none shrink-0 backdrop-blur-xl z-30"
+      >
+        <!-- 左侧窗口拖拽感知区 -->
+        <div data-tauri-drag-region class="flex items-center gap-3">
+          <span class="text-xs font-semibold text-neutral-400 pointer-events-none tracking-wider">
+            AuraTask
+          </span>
+        </div>
+
+        <!-- 中部快速全局搜索框 -->
+        <div class="flex-1 max-w-sm mx-4">
+          <div class="relative flex items-center">
+            <Search class="absolute left-2.5 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
+            <input
+              v-model="taskStore.searchQuery"
+              type="text"
+              placeholder="搜索待办任务或标签 (快捷键 1~5 切换视图)..."
+              class="w-full h-7 pl-8 pr-3 bg-white/5 border border-white/5 hover:border-white/10 rounded-lg text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.08] transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- 右侧无边框窗口控件及便签切换按钮 -->
+        <WindowControls />
+      </header>
+
+      <!-- 下部主工作区 (侧边栏 + 主内容 + 详情抽屉) -->
+      <div class="flex-1 flex overflow-hidden relative">
+        <!-- 左侧可导航栏 -->
+        <DesktopSidebar />
+
+        <!-- 中间内容视图切换 -->
+        <div class="flex-1 flex overflow-hidden">
+          <EisenhowerMatrix v-if="taskStore.activeView === 'matrix'" />
+          <KanbanBoard v-else-if="taskStore.activeView === 'kanban'" />
+          <TaskListView v-else />
+        </div>
+
+        <!-- 右侧任务详情与子任务清单抽屉 -->
+        <TaskDetailDrawer />
+      </div>
+
+      <!-- Spotlight 极速录入弹窗 -->
+      <QuickAddModal />
+
+      <!-- 番茄专注钟弹窗 -->
+      <PomodoroModal />
+
+      <!-- NAS 后台服务配置弹窗 -->
+      <ServerSettingsModal />
+    </template>
+  </div>
+</template>
