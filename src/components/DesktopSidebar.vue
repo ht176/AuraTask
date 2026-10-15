@@ -295,12 +295,18 @@ async function handleFileImport(e: Event) {
       <!-- 数据备份与恢复 及 服务器配置 -->
       <div class="flex items-center justify-between text-neutral-400 text-[11px] px-1 pt-1">
         <button
-          class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer"
-          title="配置 NAS 后台服务器直连"
+          class="flex items-center gap-1.5 transition-colors cursor-pointer group text-[11px]"
+          :class="serverStore.isStandalone ? 'text-emerald-400/90 hover:text-emerald-300' : 'text-neutral-400 hover:text-white'"
+          :title="serverStore.isStandalone ? '当前处于本地单机模式 (零依赖·无须服务)，点击可配置 NAS 云端同步' : '已连接远程 NAS，点击管理节点'"
           @click="serverStore.isSettingsOpen = true"
         >
-          <Server class="w-3 h-3 text-indigo-400" />
-          <span>NAS 后台</span>
+          <span
+            class="w-2 h-2 rounded-full transition-all shrink-0"
+            :class="serverStore.isStandalone ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : (serverStore.isConnected ? 'bg-indigo-400 shadow-sm shadow-indigo-400/50' : 'bg-rose-400 animate-pulse')"
+          ></span>
+          <span class="group-hover:text-white transition-colors truncate max-w-[85px]">
+            {{ serverStore.isStandalone ? '单机模式' : (serverStore.activeServer?.name || 'NAS 节点') }}
+          </span>
         </button>
 
         <div class="flex items-center gap-2.5">

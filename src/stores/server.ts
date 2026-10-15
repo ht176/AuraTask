@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { isTauriApp } from '../services/desktop'
+import { localDb } from '../services/localDb'
 
 export interface ServerConfig {
   id: string
@@ -14,23 +15,32 @@ const ACTIVE_ID_KEY = 'auratask_active_server_id'
 export const useServerStore = defineStore('server', {
   state: () => ({
     servers: [] as ServerConfig[],
-    activeServerId: '',
+    activeServerId: 'standalone',
     isConnected: true,
     isSettingsOpen: false,
     isTesting: false,
+    isSyncing: false,
   }),
 
   getters: {
+    isStandalone(state): boolean {
+      if (state.activeServerId === 'standalone') return true
+      if (state.servers.length === 0) return true
+      const active = state.servers.find(s => s.id === state.activeServerId)
+      return !active || !active.url
+    },
     activeServer(state): ServerConfig | null {
-      return state.servers.find(s => s.id === state.activeServerId) || state.servers[0] || null
+      if (state.activeServerId === 'standalone') return null
+      return state.servers.find(s => s.id === state.activeServerId) || null
     },
     baseUrl(): string {
-      // 在浏览器/Docker 自托管模式下，默认使用当前同源路径
+      if (this.isStandalone) {
+        return ''
+      }
       if (!isTauriApp()) {
         const custom = this.activeServer?.url
         return custom ? custom.replace(/\/+$/, '') : ''
       }
-      // 在 Tauri 桌面客户端环境下，使用配置的 NAS 服务端地址
       if (this.activeServer?.url) {
         return this.activeServer.url.replace(/\/+$/, '')
       }
@@ -49,10 +59,14 @@ export const useServerStore = defineStore('server', {
           this.servers = JSON.parse(raw)
         }
         const activeId = localStorage.getItem(ACTIVE_ID_KEY)
-        if (activeId && this.servers.some(s => s.id === activeId)) {
+        if (activeId === 'standalone') {
+          this.activeServerId = 'standalone'
+        } else if (activeId && this.servers.some(s => s.id === activeId)) {
           this.activeServerId = activeId
         } else if (this.servers.length > 0) {
           this.activeServerId = this.servers[0].id
+        } else {
+          this.activeServerId = 'standalone'
         }
       } catch (err) {
         console.warn('Failed to load server config', err)
@@ -62,6 +76,12 @@ export const useServerStore = defineStore('server', {
     saveConfig() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.servers))
       localStorage.setItem(ACTIVE_ID_KEY, this.activeServerId)
+    },
+
+    setStandalone() {
+      this.activeServerId = 'standalone'
+      this.isConnected = true
+      this.saveConfig()
     },
 
     async testConnection(url: string, token?: string): Promise<{ success: boolean; message: string }> {
@@ -119,9 +139,38 @@ export const useServerStore = defineStore('server', {
     removeServer(id: string) {
       this.servers = this.servers.filter(s => s.id !== id)
       if (this.activeServerId === id) {
-        this.activeServerId = this.servers[0]?.id || ''
+        this.activeServerId = this.servers[0]?.id || 'standalone'
       }
       this.saveConfig()
+    },
+
+    // 将单机版现有数据全量同步上传到远程 NAS
+    async syncLocalDataToRemote(): Promise<{ success: boolean; count: number; error?: string }> {
+      if (this.isStandalone || !this.baseUrl) {
+        return { success: false, count: 0, error: '当前未连接远程 NAS 节点' }
+      }
+
+      this.isSyncing = true
+      try {
+        const backupData = localDb.exportBackupData()
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (this.authToken) headers['Authorization'] = `Bearer ${this.authToken}`
+
+        const res = await fetch(`${this.baseUrl}/api/backup/import`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(backupData),
+        })
+        const data = await res.json()
+        if (data.success) {
+          return { success: true, count: data.importedTasks || backupData.tasks.length }
+        }
+        return { success: false, count: 0, error: data.error || '上传同步失败' }
+      } catch (err: any) {
+        return { success: false, count: 0, error: err.message || '网络请求失败' }
+      } finally {
+        this.isSyncing = false
+      }
     }
   }
 })
