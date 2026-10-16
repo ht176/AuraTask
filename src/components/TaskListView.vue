@@ -46,14 +46,14 @@ const completedTasks = computed(() => {
 
 const viewTitle = computed(() => {
   switch (taskStore.activeView) {
-    case 'today': return '☀️ 我的一天'
-    case 'inbox': return '📥 收集箱'
-    case 'upcoming': return '📅 近期安排'
-    case 'all': return '📦 全部待办'
-    case 'completed': return '✅ 已完成归档'
+    case 'today': return '我的一天'
+    case 'inbox': return '收集箱'
+    case 'upcoming': return '近期安排'
+    case 'all': return '全部待办'
+    case 'completed': return '已完成归档'
     default: {
       const cat = taskStore.categories.find(c => c.id === taskStore.activeView)
-      return cat ? `📁 ${cat.name}` : '待办清单'
+      return cat ? cat.name : '待办清单'
     }
   }
 })
@@ -80,54 +80,54 @@ async function handleClearCompleted() {
     <!-- 头部顶栏：标题、进度与排序 -->
     <header class="px-6 py-4 flex items-center justify-between border-b border-white/5 shrink-0">
       <div>
-        <div class="flex items-center gap-3">
-          <h2 class="text-xl font-bold tracking-tight text-white">{{ viewTitle }}</h2>
+        <div class="flex items-center gap-2.5">
+          <h2 class="text-lg font-semibold tracking-tight text-white">{{ viewTitle }}</h2>
           <span
             v-if="taskStore.activeTag"
-            class="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-medium"
+            class="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 text-xs font-mono border border-indigo-500/20"
           >
             #{{ taskStore.activeTag }}
           </span>
         </div>
-        <p class="text-xs text-neutral-400 mt-0.5">
-          {{ new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }) }}
-          <span v-if="pendingTasks.length > 0" class="ml-2 font-mono text-indigo-400">
-            · {{ pendingTasks.length }} 项待办
+        <p class="text-xs text-neutral-400 mt-1 flex items-center gap-2">
+          <span>{{ new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }) }}</span>
+          <span v-if="pendingTasks.length > 0" class="px-1.5 py-0.2 rounded bg-white/5 text-neutral-300 font-mono text-[11px]">
+            {{ pendingTasks.length }} 项待处理
           </span>
         </p>
       </div>
 
       <!-- 排序与过滤选择器 -->
       <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 border border-white/5 text-xs text-neutral-300">
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-xs text-neutral-300">
           <SlidersHorizontal class="w-3.5 h-3.5 text-neutral-400" />
           <select
             v-model="sortBy"
             class="bg-transparent border-none text-xs text-neutral-200 focus:outline-none cursor-pointer"
           >
-            <option value="priority" class="bg-neutral-900 text-white">按优先级排序</option>
-            <option value="due_date" class="bg-neutral-900 text-white">按截止日期</option>
-            <option value="created_at" class="bg-neutral-900 text-white">按创建时间</option>
+            <option value="priority" class="bg-neutral-900 text-white">优先级排序</option>
+            <option value="due_date" class="bg-neutral-900 text-white">截止日期</option>
+            <option value="created_at" class="bg-neutral-900 text-white">创建时间</option>
           </select>
         </div>
       </div>
     </header>
 
     <!-- 主体区域：输入框与任务列表 -->
-    <main class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <main class="flex-1 overflow-y-auto px-6 py-4 space-y-3.5">
       <!-- 极速快捷录入框 (内嵌于列表顶部) -->
-      <div class="glass-panel p-2.5 rounded-2xl border border-white/10 shadow-lg shadow-black/20 focus-within:border-indigo-500/50 transition-all">
-        <div class="flex items-center gap-2.5 px-2">
+      <div class="glass-panel px-3.5 py-2.5 rounded-xl border border-white/10 shadow-xs focus-within:border-indigo-500/50 transition-colors">
+        <div class="flex items-center gap-2.5">
           <Plus class="w-4 h-4 text-indigo-400 shrink-0" />
           <input
             v-model="quickInputText"
             type="text"
-            placeholder="快速添加待办... (试试输入: 明天下午3点 买咖啡 !高 #工作 *2)"
-            class="w-full bg-transparent text-sm text-white placeholder-neutral-500 focus:outline-none"
+            placeholder="添加新待办，按 Enter 保存 (支持时间、!高、#标签)"
+            class="w-full bg-transparent text-[13px] text-white placeholder-neutral-500 focus:outline-none"
             @keyup.enter="handleQuickAdd"
           />
           <button
-            class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shrink-0 cursor-pointer transition-all active:scale-95 disabled:opacity-40"
+            class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shrink-0 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-30"
             :disabled="!quickInputText.trim()"
             @click="handleQuickAdd"
           >

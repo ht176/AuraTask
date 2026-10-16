@@ -87,24 +87,23 @@ async function handleQuickAdd(status: KanbanStatus) {
 
 <template>
   <div class="flex-1 h-full flex flex-col overflow-hidden bg-transparent select-none p-6">
-    <div class="flex items-center justify-between pb-4 border-b border-white/5">
+    <div class="flex items-center justify-between pb-3.5 border-b border-white/5">
       <div>
-        <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <span>任务看板工作流</span>
-          <span class="text-xs font-normal text-neutral-400 font-mono">Kanban Board</span>
+        <h2 class="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+          <span>任务流转看板</span>
         </h2>
         <p class="text-xs text-neutral-400 mt-0.5">
-          在不同推进阶段之间自由拖动卡片，直观把控项目全景流转。
+          跨阶段推进任务卡片，全景把控事项进度
         </p>
       </div>
     </div>
 
     <!-- 4 列水平看板 -->
-    <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 overflow-hidden">
+    <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3.5 mt-3.5 overflow-hidden">
       <div
         v-for="col in columnsConfig"
         :key="col.id"
-        class="flex flex-col rounded-2xl glass-panel p-3.5 border border-white/5 overflow-hidden"
+        class="flex flex-col rounded-xl glass-panel p-3 border border-white/5 overflow-hidden"
         @dragover.prevent
         @drop="handleDrop(col.id)"
       >

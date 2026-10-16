@@ -93,24 +93,23 @@ async function handleQuickAdd(quadrant: EisenhowerQuadrant) {
 
 <template>
   <div class="flex-1 h-full flex flex-col overflow-hidden bg-transparent select-none p-6">
-    <div class="flex items-center justify-between pb-4 border-b border-white/5">
+    <div class="flex items-center justify-between pb-3.5 border-b border-white/5">
       <div>
-        <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <span>四象限时间管理矩阵</span>
-          <span class="text-xs font-normal text-neutral-400 font-mono">Eisenhower Matrix</span>
+        <h2 class="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+          <span>四象限时间管理</span>
         </h2>
         <p class="text-xs text-neutral-400 mt-0.5">
-          拖拽任务可在不同象限之间自由调整，合理分配精力在“重要不紧急”的长期价值事项上。
+          按重要与紧急程度科学分配精力，优先聚焦高价值事项
         </p>
       </div>
     </div>
 
     <!-- 2x2 四象限网格 -->
-    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 overflow-hidden">
+    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3.5 overflow-hidden">
       <div
         v-for="q in quadrantsConfig"
         :key="q.id"
-        class="flex flex-col rounded-2xl glass-panel p-4 border transition-all overflow-hidden"
+        class="flex flex-col rounded-xl glass-panel p-3.5 border transition-colors overflow-hidden"
         :class="q.border"
         @dragover.prevent
         @drop="handleDrop(q.id)"

@@ -414,18 +414,18 @@ async function handleClearCurrentArchive() {
     <header class="px-6 py-4 border-b border-white/5 shrink-0 space-y-3 bg-black/10">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-            <CheckCircle2 class="w-5 h-5 stroke-[2.5]" />
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 class="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
-            <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <h2 class="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
               <span>已完成归档</span>
-              <span class="text-xs font-normal text-emerald-400 font-mono px-2 py-0.5 rounded-full bg-emerald-500/15">
+              <span class="text-xs font-medium text-emerald-400 font-mono px-2 py-0.2 rounded-full bg-emerald-500/15">
                 {{ filteredCompletedTasks.length }} 项已达成
               </span>
             </h2>
             <p class="text-xs text-neutral-400 mt-0.5">
-              记录每一步坚实的成长脚印 · 支持按周、按月度全景复盘与多维精细筛选
+              按周、月维度查看历史完成记录与专注投入统计
             </p>
           </div>
         </div>
@@ -435,7 +435,7 @@ async function handleClearCurrentArchive() {
           <button
             v-if="filteredCompletedTasks.length > 0"
             @click="handleClearCurrentArchive"
-            class="px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+            class="px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             title="清空当前符合筛选条件的已完成任务"
           >
             <Trash2 class="w-3.5 h-3.5" />
@@ -445,51 +445,51 @@ async function handleClearCurrentArchive() {
       </div>
 
       <!-- 概览指标卡片条 -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-        <div class="p-3 rounded-2xl glass-card flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
-            <Check class="w-5 h-5 stroke-[3]" />
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+        <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+            <Check class="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
             <div class="text-[11px] text-neutral-400">筛选范围内完成</div>
-            <div class="text-base font-bold font-mono text-white">
+            <div class="text-sm font-semibold font-mono text-white">
               {{ filteredCompletedTasks.length }} <span class="text-xs font-normal text-neutral-500">项</span>
             </div>
           </div>
         </div>
 
-        <div class="p-3 rounded-2xl glass-card flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+        <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
             <Calendar class="w-4 h-4" />
           </div>
           <div>
             <div class="text-[11px] text-neutral-400">本周已达成</div>
-            <div class="text-base font-bold font-mono text-indigo-300">
+            <div class="text-sm font-semibold font-mono text-indigo-300">
               {{ statsThisWeek }} <span class="text-xs font-normal text-neutral-500">项</span>
             </div>
           </div>
         </div>
 
-        <div class="p-3 rounded-2xl glass-card flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
+        <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
             <BarChart3 class="w-4 h-4" />
           </div>
           <div>
             <div class="text-[11px] text-neutral-400">本月累计达成</div>
-            <div class="text-base font-bold font-mono text-purple-300">
+            <div class="text-sm font-semibold font-mono text-purple-300">
               {{ statsThisMonth }} <span class="text-xs font-normal text-neutral-500">项</span>
             </div>
           </div>
         </div>
 
-        <div class="p-3 rounded-2xl glass-card flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+        <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
             <Flame class="w-4 h-4" />
           </div>
           <div>
             <div class="text-[11px] text-neutral-400">专注番茄投入</div>
-            <div class="text-base font-bold font-mono text-amber-300">
-              {{ totalPomodoros }} <span class="text-xs font-normal text-neutral-500">个 ({{ totalFocusMinutes }}m)</span>
+            <div class="text-sm font-semibold font-mono text-amber-300">
+              {{ totalPomodoros }} <span class="text-xs font-normal text-neutral-500">番茄 ({{ totalFocusMinutes }}m)</span>
             </div>
           </div>
         </div>

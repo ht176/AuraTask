@@ -76,60 +76,64 @@ function handleSelect() {
 
 <template>
   <div
-    class="group relative flex items-center justify-between px-3.5 py-3 rounded-2xl glass-card transition-all cursor-pointer"
+    class="group relative flex items-center justify-between px-3.5 py-2.5 rounded-xl glass-card transition-all cursor-pointer"
     :class="[
-      task.completed ? 'opacity-60 bg-white/[0.02]' : 'hover:border-indigo-500/30',
+      task.completed ? 'opacity-55 bg-white/[0.015]' : 'hover:border-white/15',
       taskStore.selectedTaskId === task.id ? 'glass-card-active' : ''
     ]"
     @click="handleSelect"
   >
-    <!-- 左侧优先级纵向发光条 -->
+    <!-- 左侧优先级细线指示条 -->
     <div
-      class="absolute left-0 top-3 bottom-3 w-1 rounded-r-full"
+      v-if="!task.completed && task.priority <= 3"
+      class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r transition-colors"
       :class="{
-        'bg-rose-500 glow-p1': task.priority === 1,
-        'bg-amber-500 glow-p2': task.priority === 2,
-        'bg-blue-500 glow-p3': task.priority === 3,
-        'bg-neutral-600': task.priority === 4,
+        'bg-rose-500': task.priority === 1,
+        'bg-amber-400': task.priority === 2,
+        'bg-indigo-400': task.priority === 3,
       }"
     ></div>
 
     <div class="flex items-center gap-3 min-w-0 flex-1 pl-1">
       <!-- 完成勾选圆形按钮 -->
       <button
-        class="w-5 h-5 rounded-full border flex items-center justify-center transition-all shrink-0 cursor-pointer"
+        class="w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-all shrink-0 cursor-pointer"
         :class="task.completed
-          ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/30'
-          : 'border-neutral-500 hover:border-indigo-400 hover:scale-110'"
+          ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
+          : 'border-white/20 hover:border-indigo-400 hover:bg-white/5'"
         @click.stop="handleToggle"
       >
-        <Check v-if="task.completed" class="w-3.5 h-3.5 stroke-[3]" />
+        <Check v-if="task.completed" class="w-3 h-3 stroke-[2.5]" />
       </button>
 
       <!-- 任务标题与详情摘要 -->
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
           <span
-            class="text-xs sm:text-sm font-medium tracking-tight truncate transition-all"
-            :class="task.completed ? 'line-through text-neutral-400' : 'text-neutral-100'"
+            class="text-xs sm:text-[13px] font-medium tracking-tight truncate transition-colors"
+            :class="task.completed ? 'line-through text-neutral-500' : 'text-neutral-100'"
           >
             {{ task.title }}
           </span>
 
-          <!-- 优先级标志徽章 -->
+          <!-- 优先级标志徽章 (仅高优先级轻巧呈现，避免多重重复编码) -->
           <span
-            v-if="task.priority <= 2 && !task.completed"
-            class="text-[10px] px-1.5 py-0.5 rounded-md font-semibold shrink-0"
-            :class="priorityColors[task.priority].bg + ' ' + priorityColors[task.priority].text"
+            v-if="task.priority === 1 && !task.completed"
+            class="text-[10px] px-1.5 py-0.2 rounded font-medium bg-rose-500/15 text-rose-300 shrink-0"
           >
-            <Flag class="w-2.5 h-2.5 inline mr-0.5" />
-            P{{ task.priority }}
+            紧急
+          </span>
+          <span
+            v-else-if="task.priority === 2 && !task.completed"
+            class="text-[10px] px-1.5 py-0.2 rounded font-medium bg-amber-500/15 text-amber-300 shrink-0"
+          >
+            重要
           </span>
         </div>
 
         <!-- 任务副标题元数据行 (时间/标签/子任务/番茄) -->
         <div class="flex flex-wrap items-center gap-2.5 mt-1 text-[11px] text-neutral-400">
-          <!-- 完成时间 (已完成任务高亮展示) -->
+          <!-- 完成时间 (已完成任务清晰呈现) -->
           <div
             v-if="task.completed && (task.completed_at || task.updated_at)"
             class="flex items-center gap-1 font-mono text-[11px] text-emerald-400/90 font-medium"
