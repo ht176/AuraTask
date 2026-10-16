@@ -51,6 +51,24 @@ function handleStartPomodoro(e: MouseEvent) {
   taskStore.isPomodoroOpen = true
 }
 
+function formatCompletedTime(isoStr?: string | null): string {
+  if (!isoStr) return ''
+  try {
+    const d = new Date(isoStr)
+    const now = new Date()
+    const isToday = d.toDateString() === now.toDateString()
+    const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+    if (isToday) {
+      return `今天 ${timeStr}`
+    }
+    const month = d.getMonth() + 1
+    const date = d.getDate()
+    return `${month}月${date}日 ${timeStr}`
+  } catch {
+    return isoStr.slice(0, 10)
+  }
+}
+
 function handleSelect() {
   taskStore.selectedTaskId = props.task.id
 }
@@ -111,9 +129,18 @@ function handleSelect() {
 
         <!-- 任务副标题元数据行 (时间/标签/子任务/番茄) -->
         <div class="flex flex-wrap items-center gap-2.5 mt-1 text-[11px] text-neutral-400">
-          <!-- 截止时间 -->
+          <!-- 完成时间 (已完成任务高亮展示) -->
           <div
-            v-if="dueDateInfo"
+            v-if="task.completed && (task.completed_at || task.updated_at)"
+            class="flex items-center gap-1 font-mono text-[11px] text-emerald-400/90 font-medium"
+          >
+            <Check class="w-3 h-3 stroke-[2.5]" />
+            <span>完成于 {{ formatCompletedTime(task.completed_at || task.updated_at) }}</span>
+          </div>
+
+          <!-- 截止时间 (未完成任务展示) -->
+          <div
+            v-else-if="dueDateInfo"
             class="flex items-center gap-1 font-mono text-[11px]"
             :class="{
               'text-rose-400 font-semibold': dueDateInfo.isOverdue,

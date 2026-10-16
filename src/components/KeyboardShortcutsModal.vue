@@ -129,12 +129,22 @@ function handleClose() {
 
           <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5 divide-y divide-white/5">
             <div class="py-2 flex items-center justify-between">
-              <span class="text-neutral-200">呼出极速录入弹窗</span>
-              <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-white">⌘ K / Ctrl K</kbd>
+              <div>
+                <span class="text-neutral-200">呼出极速录入待办（自动聚焦输入框）</span>
+                <div class="text-[10px] text-neutral-500">列表任意位置可直接按 N 键极速新增</div>
+              </div>
+              <div class="flex items-center gap-1">
+                <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-white">⌘ / Ctrl + K</kbd>
+                <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-white">⌘ / Ctrl + N</kbd>
+                <kbd class="px-1.5 py-0.5 rounded bg-white/10 font-mono text-indigo-300">N</kbd>
+              </div>
             </div>
             <div class="py-2 flex items-center justify-between">
-              <span class="text-neutral-200">切换视图（我的一天 / 收集箱 / 近期 / 四象限 / 看板）</span>
-              <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-white">按数字键 1 ~ 5</kbd>
+              <div>
+                <span class="text-neutral-200">一键切换主视图</span>
+                <div class="text-[10px] text-neutral-500">1:我的一天 2:收集箱 3:近期 4:四象限 5:看板 6:已完成</div>
+              </div>
+              <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-white">按数字键 1 ~ 6</kbd>
             </div>
             <div class="py-2 flex items-center justify-between">
               <span class="text-neutral-200">快速关闭弹窗 / 取消聚焦 / 退出抽屉</span>

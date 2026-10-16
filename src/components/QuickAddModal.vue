@@ -23,17 +23,44 @@ const parsed = computed(() => {
   return parseNaturalLanguage(text.value)
 })
 
-watch(() => taskStore.isQuickAddOpen, (isOpen) => {
-  if (isOpen) {
-    text.value = ''
-    selectedCategoryId.value = ['today', 'upcoming', 'all', 'completed', 'matrix', 'kanban'].includes(taskStore.activeView)
-      ? 'inbox'
-      : taskStore.activeView
-    nextTick(() => {
-      inputRef.value?.focus()
-    })
+function focusInputField() {
+  if (inputRef.value) {
+    inputRef.value.focus()
+    inputRef.value.select()
   }
-})
+}
+
+watch(
+  () => taskStore.isQuickAddOpen,
+  async (isOpen) => {
+    if (isOpen) {
+      text.value = ''
+      selectedCategoryId.value = ['today', 'upcoming', 'all', 'completed', 'matrix', 'kanban'].includes(taskStore.activeView)
+        ? 'inbox'
+        : taskStore.activeView
+
+      await nextTick()
+      focusInputField()
+
+      // 多阶段微延迟，确保系统原生激活窗口、动画展开以及按键冒泡完全结束后聚焦
+      requestAnimationFrame(() => focusInputField())
+      setTimeout(focusInputField, 30)
+      setTimeout(focusInputField, 80)
+      setTimeout(focusInputField, 160)
+      setTimeout(focusInputField, 300)
+    }
+  },
+  { flush: 'post' }
+)
+
+// 当窗口从后台被重新激活时，若弹窗处于开启状态则自动重新聚拢焦点
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    if (taskStore.isQuickAddOpen) {
+      focusInputField()
+    }
+  })
+}
 
 async function handleSave() {
   if (!text.value.trim()) return
@@ -74,6 +101,7 @@ function handleClose() {
           ref="inputRef"
           v-model="text"
           type="text"
+          autofocus
           placeholder="输入待办... 如: 明天下午3点 提交技术方案 !高 #工作 *3"
           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500/80 transition-all"
           @keyup.enter="handleSave"

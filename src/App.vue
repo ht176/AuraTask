@@ -4,6 +4,7 @@ import DesktopSidebar from './components/DesktopSidebar.vue'
 import TaskListView from './components/TaskListView.vue'
 import EisenhowerMatrix from './components/EisenhowerMatrix.vue'
 import KanbanBoard from './components/KanbanBoard.vue'
+import CompletedArchiveView from './components/CompletedArchiveView.vue'
 import TaskDetailDrawer from './components/TaskDetailDrawer.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import PomodoroModal from './components/PomodoroModal.vue'
@@ -30,8 +31,8 @@ function handleKeyDown(e: KeyboardEvent) {
   const target = e.target as HTMLElement
   const isInput = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
 
-  // Cmd / Ctrl + K 唤出极速录入框
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+  // Cmd / Ctrl + K 或 Cmd / Ctrl + N 唤出极速录入框
+  if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'k' || e.key.toLowerCase() === 'n')) {
     e.preventDefault()
     taskStore.isQuickAddOpen = !taskStore.isQuickAddOpen
     return
@@ -88,13 +89,21 @@ function handleKeyDown(e: KeyboardEvent) {
 
   if (isInput) return
 
-  // 快捷键视图切换: 1~5
+  // 非输入状态下按 n 快捷唤起新建待办
+  if (e.key === 'n' || e.key === 'N') {
+    e.preventDefault()
+    taskStore.isQuickAddOpen = true
+    return
+  }
+
+  // 快捷键视图切换: 1~6
   if (!e.metaKey && !e.ctrlKey) {
     if (e.key === '1') taskStore.activeView = 'today'
     if (e.key === '2') taskStore.activeView = 'inbox'
     if (e.key === '3') taskStore.activeView = 'upcoming'
     if (e.key === '4') taskStore.activeView = 'matrix'
     if (e.key === '5') taskStore.activeView = 'kanban'
+    if (e.key === '6') taskStore.activeView = 'completed'
   }
 }
 
@@ -109,6 +118,9 @@ onMounted(async () => {
   await shortcutService.registerAll({
     onQuickAdd: () => {
       taskStore.isQuickAddOpen = true
+      if (typeof window !== 'undefined') {
+        window.focus()
+      }
     },
     onToggleWindow: () => {},
     onToggleMini: () => {
@@ -178,6 +190,7 @@ onUnmounted(() => {
         <div class="flex-1 flex overflow-hidden">
           <EisenhowerMatrix v-if="taskStore.activeView === 'matrix'" />
           <KanbanBoard v-else-if="taskStore.activeView === 'kanban'" />
+          <CompletedArchiveView v-else-if="taskStore.activeView === 'completed'" />
           <TaskListView v-else />
         </div>
 

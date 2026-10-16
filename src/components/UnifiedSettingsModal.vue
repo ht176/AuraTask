@@ -638,6 +638,26 @@ function handleOpenUserGuide() {
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
+                  <div class="font-medium text-white">应用内极速录入待办（自动聚焦输入框）</div>
+                  <div class="text-[11px] text-neutral-400">列表任意处直接按单键 N 亦可极速录入</div>
+                </div>
+                <div class="flex items-center gap-1 font-mono text-xs text-white">
+                  <kbd class="px-2 py-1 rounded bg-white/10">⌘ / Ctrl + K</kbd>
+                  <kbd class="px-2 py-1 rounded bg-white/10">⌘ / Ctrl + N</kbd>
+                  <kbd class="px-1.5 py-1 rounded bg-white/10 text-indigo-300">N</kbd>
+                </div>
+              </div>
+
+              <div class="pt-2 flex items-center justify-between">
+                <div>
+                  <div class="font-medium text-white">一键切换主视图</div>
+                  <div class="text-[11px] text-neutral-400">1:我的一天 2:收集箱 3:近期 4:四象限 5:看板 6:已完成</div>
+                </div>
+                <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-xs text-white">数字键 1 ~ 6</kbd>
+              </div>
+
+              <div class="pt-2 flex items-center justify-between">
+                <div>
                   <div class="font-medium text-white">显示 / 隐藏主窗口</div>
                   <div class="text-[11px] text-neutral-400">一键快速置顶或最小化主界面</div>
                 </div>

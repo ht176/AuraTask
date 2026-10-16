@@ -105,6 +105,9 @@ export async function showAndFocusWindow() {
     await win.unminimize()
     await win.show()
     await win.setFocus()
+    if (typeof window !== 'undefined') {
+      window.focus()
+    }
   } catch (err) {
     console.warn('Failed to show and focus window', err)
   }
