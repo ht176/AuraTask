@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
+import gsap from 'gsap'
 import {
   Check,
   Calendar,
@@ -12,6 +13,8 @@ import {
 import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
 import { tagService } from '../services/tags'
+import { animationService } from '../services/animation'
+import { sound } from '../services/audio'
 import type { Task, PriorityLevel } from '../types/todo'
 
 const props = defineProps<{
@@ -20,6 +23,15 @@ const props = defineProps<{
 
 const taskStore = useTaskStore()
 const pomodoroStore = usePomodoroStore()
+
+const checkBtnRef = ref<HTMLElement | null>(null)
+const isToggling = ref(false)
+
+onUnmounted(() => {
+  if (checkBtnRef.value) {
+    gsap.killTweensOf(checkBtnRef.value)
+  }
+})
 
 const priorityColors: Record<PriorityLevel, { border: string; bg: string; text: string; label: string }> = {
   1: { border: 'border-rose-500/50', bg: 'bg-rose-500/10', text: 'text-rose-400', label: 'P1 紧急重要' },
@@ -41,8 +53,35 @@ const dueDateInfo = computed(() => {
   }
 })
 
-function handleToggle() {
-  taskStore.toggleTask(props.task.id)
+async function handleToggle(e: MouseEvent) {
+  if (isToggling.value) return
+
+  const willComplete = !props.task.completed
+
+  if (willComplete) {
+    isToggling.value = true
+
+    // 1. GSAP 弹性复选框回弹微动效
+    if (checkBtnRef.value) {
+      animationService.bounceCheckButton(checkBtnRef.value)
+    }
+
+    // 2. 音效与局部精准坐标微撒花 (避免全屏 Canvas 绘制导致掉帧)
+    sound.playCheckSound()
+    animationService.triggerCheckConfetti({ x: e.clientX, y: e.clientY })
+
+    // 3. 留出 150ms 视觉驻留感知打勾成果，随后由 TransitionGroup 顺滑交接
+    setTimeout(async () => {
+      await taskStore.toggleTask(props.task.id, { skipFx: true })
+      isToggling.value = false
+    }, 150)
+  } else {
+    // 反选恢复任务
+    if (checkBtnRef.value) {
+      animationService.bounceCheckButton(checkBtnRef.value)
+    }
+    await taskStore.toggleTask(props.task.id, { skipFx: true })
+  }
 }
 
 function handleStartPomodoro(e: MouseEvent) {
@@ -97,13 +136,14 @@ function handleSelect() {
     <div class="flex items-center gap-3 min-w-0 flex-1 pl-1">
       <!-- 完成勾选圆形按钮 -->
       <button
-        class="w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-all shrink-0 cursor-pointer"
-        :class="task.completed
+        ref="checkBtnRef"
+        class="w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-all shrink-0 cursor-pointer will-change-transform"
+        :class="(task.completed || isToggling)
           ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
           : 'border-white/20 hover:border-indigo-400 hover:bg-white/5'"
         @click.stop="handleToggle"
       >
-        <Check v-if="task.completed" class="w-3 h-3 stroke-[2.5]" />
+        <Check v-if="task.completed || isToggling" class="w-3 h-3 stroke-[2.5]" />
       </button>
 
       <!-- 任务标题与详情摘要 -->
@@ -111,7 +151,7 @@ function handleSelect() {
         <div class="flex items-center gap-2">
           <span
             class="text-xs sm:text-[13px] font-medium tracking-tight truncate transition-colors"
-            :class="task.completed ? 'line-through text-neutral-500' : 'text-neutral-100'"
+            :class="(task.completed || isToggling) ? 'line-through text-neutral-500' : 'text-neutral-100'"
           >
             {{ task.title }}
           </span>

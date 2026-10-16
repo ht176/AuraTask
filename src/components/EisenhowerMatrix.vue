@@ -173,10 +173,11 @@ async function handleQuickAdd(quadrant: EisenhowerQuadrant) {
           >
             <div class="flex items-center gap-2.5 min-w-0 flex-1">
               <button
-                class="w-4 h-4 rounded-full border border-neutral-500 hover:border-emerald-400 flex items-center justify-center shrink-0 cursor-pointer"
-                @click.stop="taskStore.toggleTask(task.id)"
+                class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 cursor-pointer transition-all"
+                :class="task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-neutral-500 hover:border-emerald-400'"
+                @click.stop="taskStore.toggleTask(task.id, { origin: { x: $event.clientX, y: $event.clientY } })"
               >
-                <Check v-if="task.completed" class="w-3 h-3 text-emerald-400" />
+                <Check v-if="task.completed" class="w-3 h-3 stroke-[2.5]" />
               </button>
               <span class="text-xs text-neutral-200 truncate group-hover:text-white">
                 {{ task.title }}

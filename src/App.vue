@@ -187,11 +187,13 @@ onUnmounted(() => {
         <DesktopSidebar />
 
         <!-- 中间内容视图切换 -->
-        <div class="flex-1 flex overflow-hidden">
-          <EisenhowerMatrix v-if="taskStore.activeView === 'matrix'" />
-          <KanbanBoard v-else-if="taskStore.activeView === 'kanban'" />
-          <CompletedArchiveView v-else-if="taskStore.activeView === 'completed'" />
-          <TaskListView v-else />
+        <div class="flex-1 flex overflow-hidden relative">
+          <Transition name="view-fade" mode="out-in">
+            <EisenhowerMatrix v-if="taskStore.activeView === 'matrix'" key="matrix" />
+            <KanbanBoard v-else-if="taskStore.activeView === 'kanban'" key="kanban" />
+            <CompletedArchiveView v-else-if="taskStore.activeView === 'completed'" key="completed" />
+            <TaskListView v-else key="list" />
+          </Transition>
         </div>
 
         <!-- 右侧任务详情与子任务清单抽屉 -->

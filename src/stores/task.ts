@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import confetti from 'canvas-confetti'
 import { api } from '../services/api'
 import { sound } from '../services/audio'
+import { animationService } from '../services/animation'
 import { parseNaturalLanguage } from '../services/nlp'
 import { isDesktopApp, enterMiniMode, exitMiniMode } from '../services/desktop'
 import type { Task, Category, ActiveNavView, StatsData, KanbanStatus, EisenhowerQuadrant } from '../types/todo'
@@ -150,7 +150,7 @@ export const useTaskStore = defineStore('task', {
       }
     },
 
-    async toggleTask(id: string) {
+    async toggleTask(id: string, options?: { origin?: { x: number; y: number }; skipFx?: boolean }) {
       const task = this.tasks.find(t => t.id === id)
       if (!task) return
 
@@ -159,14 +159,10 @@ export const useTaskStore = defineStore('task', {
 
       if (willComplete) {
         task.completed_at = new Date().toISOString()
-        sound.playCheckSound()
-        // 触发五彩礼花撒花动效
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.8 },
-          colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6']
-        })
+        if (!options?.skipFx) {
+          sound.playCheckSound()
+          animationService.triggerCheckConfetti(options?.origin)
+        }
       } else {
         task.completed_at = null
       }

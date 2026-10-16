@@ -164,14 +164,18 @@ async function handleClearCompleted() {
 
       <!-- 任务列表容器 -->
       <div v-if="pendingTasks.length > 0 || completedTasks.length > 0" class="space-y-2">
-        <!-- 未完成任务列表 -->
-        <div class="space-y-2">
+        <!-- 未完成任务列表 (TransitionGroup FLIP 顺滑位移过渡) -->
+        <TransitionGroup
+          name="task-list"
+          tag="div"
+          class="space-y-2 relative"
+        >
           <TaskItem
             v-for="task in pendingTasks"
             :key="task.id"
             :task="task"
           />
-        </div>
+        </TransitionGroup>
 
         <!-- 已完成任务折叠区域 -->
         <div v-if="completedTasks.length > 0" class="pt-4">
@@ -194,13 +198,18 @@ async function handleClearCompleted() {
             </button>
           </div>
 
-          <div v-if="isShowCompleted" class="space-y-2 mt-2">
+          <TransitionGroup
+            v-if="isShowCompleted"
+            name="task-list"
+            tag="div"
+            class="space-y-2 mt-2 relative"
+          >
             <TaskItem
               v-for="task in completedTasks"
               :key="task.id"
               :task="task"
             />
-          </div>
+          </TransitionGroup>
         </div>
       </div>
 

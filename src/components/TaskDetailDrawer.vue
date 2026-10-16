@@ -123,9 +123,9 @@ function handleClose() {
           :class="task.completed
             ? 'bg-emerald-500 border-emerald-500 text-white'
             : 'border-neutral-500 hover:border-indigo-400'"
-          @click="taskStore.toggleTask(task.id)"
+          @click="taskStore.toggleTask(task.id, { origin: { x: $event.clientX, y: $event.clientY } })"
         >
-          <Check v-if="task.completed" class="w-3.5 h-3.5" />
+          <Check v-if="task.completed" class="w-3.5 h-3.5 stroke-[2.5]" />
         </button>
         <span class="text-xs text-neutral-400 font-medium">任务详情</span>
       </div>
