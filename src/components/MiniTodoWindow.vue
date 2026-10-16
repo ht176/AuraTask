@@ -35,7 +35,7 @@ async function handleAdd() {
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col bg-[#0d0f18]/95 border border-white/10 select-none overflow-hidden text-neutral-100 rounded-2xl shadow-2xl backdrop-blur-2xl">
+  <div class="w-full h-full flex flex-col glass-panel border border-white/10 select-none overflow-hidden text-neutral-100 rounded-2xl shadow-2xl backdrop-blur-2xl">
     <!-- 顶部拖拽标题栏 -->
     <div
       data-tauri-drag-region

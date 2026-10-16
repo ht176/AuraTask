@@ -46,10 +46,10 @@ function handleClose() {
     @click.self="handleClose"
   >
     <div
-      class="w-full max-w-4xl h-[640px] max-h-[90vh] bg-[#0d0f18] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col text-neutral-200"
+      class="w-full max-w-4xl h-[640px] max-h-[90vh] glass-panel border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col text-neutral-200"
     >
       <!-- 弹窗顶栏 -->
-      <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#0a0c14]/80">
+      <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-black/10">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
             <BookOpen class="w-4 h-4" />

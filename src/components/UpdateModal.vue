@@ -45,7 +45,7 @@ function openGitHubReleases() {
     @click.self="handleClose"
   >
     <div
-      class="w-full max-w-md bg-[#0f111a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-neutral-200 animate-in fade-in zoom-in-95 duration-200"
+      class="w-full max-w-md glass-panel border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-neutral-200 animate-in fade-in zoom-in-95 duration-200"
     >
       <!-- 头部 -->
       <div class="px-5 pt-5 pb-3 flex items-center justify-between border-b border-white/5">

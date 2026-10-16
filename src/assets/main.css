@@ -65,23 +65,231 @@ html.theme-matrix {
   --text-sub: #86efac;
 }
 
-/* 极简明亮模式 (Light) */
+/* 极简明亮模式 (Light) - 高对比度与通透纯净白昼设计 */
 html.theme-light {
   --app-bg: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #ffffff 100%);
   --header-bg: rgba(255, 255, 255, 0.88);
-  --sidebar-bg: rgba(248, 250, 252, 0.94);
-  --panel-bg: rgba(255, 255, 255, 0.88);
-  --card-bg: rgba(255, 255, 255, 0.92);
-  --card-hover-bg: #ffffff;
+  --sidebar-bg: rgba(248, 250, 252, 0.96);
+  --panel-bg: rgba(255, 255, 255, 0.96);
+  --card-bg: #ffffff;
+  --card-hover-bg: #f8fafc;
   --border-color: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(79, 70, 229, 0.4);
   --accent-color: #4f46e5;
   --text-main: #0f172a;
-  --text-sub: #64748b;
+  --text-sub: #475569;
+
+  /* Tailwind 中性色阶映射反转 (使整个应用中 text-neutral-100~500 自动切换为清晰深色) */
+  --color-neutral-50: #020617;
+  --color-neutral-100: #0f172a;
+  --color-neutral-200: #1e293b;
+  --color-neutral-300: #334155;
+  --color-neutral-400: #475569;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #94a3b8;
+  --color-neutral-700: #cbd5e1;
+  --color-neutral-800: #e2e8f0;
+  --color-neutral-900: #f8fafc;
 }
 
 html.theme-light body {
   color: #0f172a;
+}
+
+/* 亮色模式：深浅阴影与面板边框重塑 */
+html.theme-light .glass-card {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.07);
+}
+html.theme-light .glass-card:hover {
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.08);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+html.theme-light .glass-panel {
+  box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* 亮色模式：半透明边框与半透明白色高光转为柔和浅灰 */
+html.theme-light .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html.theme-light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html.theme-light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.18) !important;
+}
+
+html.theme-light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+html.theme-light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+html.theme-light .bg-white\/15 {
+  background-color: rgba(0, 0, 0, 0.09) !important;
+}
+html.theme-light .bg-white\/\[0\.02\],
+html.theme-light .bg-white\/\[0\.03\],
+html.theme-light .bg-white\/\[0\.04\],
+html.theme-light .bg-white\/\[0\.08\] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+html.theme-light .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+html.theme-light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+html.theme-light .hover\:bg-white\/15:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+html.theme-light .hover\:border-white\/10:hover {
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+
+/* 亮色模式：半透明黑色转为清爽微底色 */
+html.theme-light .bg-black\/10,
+html.theme-light .bg-black\/20,
+html.theme-light .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 亮色模式：输入框、文本域与选择器字体深色化与边框强化 */
+html.theme-light input:not([type="checkbox"]):not([type="radio"]),
+html.theme-light textarea,
+html.theme-light select {
+  color: #0f172a !important;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+html.theme-light input:not([type="checkbox"]):not([type="radio"]):focus,
+html.theme-light textarea:focus,
+html.theme-light select:focus {
+  background-color: #ffffff;
+  border-color: rgba(99, 102, 241, 0.6) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+html.theme-light input::placeholder,
+html.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.theme-light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* 亮色模式：标题类文字强制清晰深色 */
+html.theme-light h1,
+html.theme-light h2,
+html.theme-light h3,
+html.theme-light h4,
+html.theme-light h5,
+html.theme-light h6 {
+  color: #0f172a !important;
+}
+
+/* 侧边栏/分类/归档维度处于 active 态时的显目样式 */
+html.theme-light button.bg-white\/10.text-white,
+html.theme-light .bg-white\/10.text-white {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+  color: #4338ca !important;
+  font-weight: 600;
+}
+
+/* 亮色模式：标题、指标与卡片中 bare text-white 自动转为高清晰深色 */
+html.theme-light :is(span, div, p, kbd, label).text-white:not(
+  button,
+  button *,
+  [class*="bg-indigo-"],
+  [class*="bg-emerald-"],
+  [class*="bg-rose-"],
+  [class*="bg-amber-"],
+  [class*="bg-violet-"],
+  [class*="bg-blue-"],
+  [class*="bg-gradient-"]
+) {
+  color: #0f172a !important;
+}
+
+/* 实体彩色按钮与主行动按钮：在亮色模式下坚定保留纯白文字 */
+html.theme-light button.bg-indigo-600,
+html.theme-light button.bg-indigo-500,
+html.theme-light button.bg-emerald-500,
+html.theme-light button.bg-rose-600,
+html.theme-light button.bg-rose-500,
+html.theme-light [class*="bg-gradient-to-"] {
+  color: #ffffff !important;
+}
+html.theme-light button.bg-indigo-600 *,
+html.theme-light button.bg-indigo-500 *,
+html.theme-light button.bg-emerald-500 *,
+html.theme-light button.bg-rose-600 *,
+html.theme-light button.bg-rose-500 *,
+html.theme-light [class*="bg-gradient-to-"] * {
+  color: #ffffff;
+}
+
+/* 亮色模式：浅色徽标与状态文本加深对比度 (告别苍白欠饱和) */
+html.theme-light .text-rose-300 { color: #be123c !important; }
+html.theme-light .text-rose-400 { color: #e11d48 !important; }
+html.theme-light .text-amber-300 { color: #b45309 !important; }
+html.theme-light .text-amber-400 { color: #d97706 !important; }
+html.theme-light .text-indigo-300 { color: #4338ca !important; }
+html.theme-light .text-indigo-400 { color: #4f46e5 !important; }
+html.theme-light .text-emerald-300 { color: #047857 !important; }
+html.theme-light .text-emerald-400 { color: #059669 !important; }
+html.theme-light .text-sky-300 { color: #0369a1 !important; }
+html.theme-light .text-sky-400 { color: #0284c7 !important; }
+html.theme-light .text-purple-300,
+html.theme-light .text-violet-300 { color: #6d28d9 !important; }
+html.theme-light .text-purple-400,
+html.theme-light .text-violet-400 { color: #7c3aed !important; }
+
+html.theme-light .bg-rose-500\/10,
+html.theme-light .bg-rose-500\/15,
+html.theme-light .bg-rose-500\/20 {
+  background-color: rgba(244, 63, 94, 0.1) !important;
+}
+html.theme-light .bg-amber-500\/10,
+html.theme-light .bg-amber-500\/15,
+html.theme-light .bg-amber-500\/20 {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+html.theme-light .bg-indigo-500\/10,
+html.theme-light .bg-indigo-500\/15,
+html.theme-light .bg-indigo-500\/20 {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+html.theme-light .bg-emerald-500\/10,
+html.theme-light .bg-emerald-500\/15,
+html.theme-light .bg-emerald-500\/20 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* 亮色模式：悬浮文本对比度修正 (避免悬浮时文字发白不可见) */
+html.theme-light .hover\:text-neutral-200:hover {
+  color: #0f172a !important;
+}
+html.theme-light .hover\:text-white:not(
+  [class*="hover:bg-indigo-"],
+  [class*="hover:bg-emerald-"],
+  [class*="hover:bg-rose-"],
+  [class*="hover:bg-violet-"]
+):hover {
+  color: #0f172a !important;
+}
+
+/* 亮色模式滚动条：使用精致沉稳的浅灰色 */
+html.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.25);
+}
+html.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.45);
 }
 
 @layer base {
