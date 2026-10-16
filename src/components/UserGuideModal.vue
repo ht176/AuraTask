@@ -29,7 +29,7 @@ const tabs = [
   { id: 'matrix', label: '优先级与四象限', icon: Grid2x2 },
   { id: 'shortcuts', label: '全局热键与便签', icon: Zap },
   { id: 'pomodoro', label: '番茄心流工作法', icon: Timer },
-  { id: 'sync', label: '单机离线与NAS同步', icon: Server },
+  { id: 'sync', label: '单机离线与数据同步', icon: Server },
   { id: 'nlp', label: '自然语言极速录入', icon: HelpCircle },
   { id: 'backup', label: '数据备份与迁移', icon: Download },
 ]
@@ -57,7 +57,7 @@ function handleClose() {
           <div>
             <h2 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
               AuraTask 使用手册与操作指南
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 font-normal">v1.0.3 指南</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 font-normal">v1.0.4 指南</span>
             </h2>
             <p class="text-xs text-neutral-400">掌握高效专注的工作流，彻底告别琐碎拖延</p>
           </div>
@@ -100,7 +100,7 @@ function handleClose() {
               欢迎使用 AuraTask 极简高效待办
             </h3>
             <p class="text-neutral-400">
-              AuraTask 专为追求极致流畅与专注体验的用户打造。它支持<strong>纯单机零依赖运行</strong>，也可无缝连接自己的<strong>私有 NAS 服务器</strong>进行多端数据同步。
+              AuraTask 专为追求极致流畅与专注体验的用户打造。它支持<strong>纯单机零依赖运行</strong>，也可无缝连接自己的<strong>远程数据同步节点</strong>进行多端数据同步。
             </p>
 
             <div class="grid grid-cols-2 gap-3 pt-2">
@@ -140,7 +140,7 @@ function handleClose() {
                   全自动增量与离线缓存
                 </div>
                 <p class="text-neutral-400 text-[11px]">
-                  离线编辑自动留存本地数据库，连接 NAS 节点后自动上传云端，断网或单机运行毫不受限。
+                  离线编辑自动留存本地数据库，连接远程节点后自动上传同步，断网或单机运行毫不受限。
                 </p>
               </div>
             </div>
@@ -296,6 +296,20 @@ function handleClose() {
                   <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ Shift P</kbd>
                 </div>
               </div>
+
+              <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div class="font-medium text-white">快速打开操作手册指南</div>
+                  <div class="text-[11px] text-neutral-400">随时呼出本指南或查阅快捷键</div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">F1</kbd>
+                  <span class="text-neutral-500 text-[10px]">/</span>
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ ?</kbd>
+                  <span class="text-neutral-500 text-[10px]">/</span>
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ H</kbd>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -342,11 +356,11 @@ function handleClose() {
             </div>
           </section>
 
-          <!-- 5. 单机模式与 NAS 同步 -->
+          <!-- 5. 单机模式与远程节点数据同步 -->
           <section v-if="activeTab === 'sync'" class="space-y-4">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <Server class="w-4 h-4 text-emerald-400" />
-              单机离线模式与 NAS 私有云同步
+              单机离线模式与远程节点数据同步
             </h3>
             <p class="text-neutral-400">
               AuraTask 采用<strong>离线优先（Offline First）</strong>架构，无论是否配置服务端，都能提供完整的待办管理。
@@ -359,21 +373,21 @@ function handleClose() {
                   纯单机模式 (零依赖·开箱即用)
                 </div>
                 <p class="text-neutral-400 text-[11px]">
-                  无需搭建任何 Docker 或服务器，数据全部安全存储在本地高可靠 SQLite 引擎中，断网也可流畅使用。
+                  无需搭建任何服务器，数据全部安全存储在本地高可靠 SQLite 引擎中，断网也可流畅使用。
                 </p>
               </div>
 
               <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1.5">
                 <div class="font-semibold text-white flex items-center gap-2">
                   <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
-                  连接群晖 / 威联通 NAS 服务端
+                  连接自建私有云 / 远程数据同步节点
                 </div>
                 <p class="text-neutral-400 text-[11px]">
-                  点击侧边栏底部节点名称进入「NAS 服务端配置」，填入 NAS 地址（如 <code class="bg-black/30 px-1 py-0.5 rounded text-indigo-300">https://todo.xiaoyunjia.site:6</code>），即可开启多设备同步。
+                  点击侧边栏底部设置进入「数据同步与节点」，填入服务地址（如 <code class="bg-black/30 px-1 py-0.5 rounded text-indigo-300">https://todo.xiaoyunjia.site:6</code>），即可开启多设备实时同步。
                 </p>
                 <div class="pt-1 flex items-center gap-2 text-[10px] text-neutral-500">
                   <FolderSync class="w-3.5 h-3.5 text-indigo-400" />
-                  <span>支持「单机数据同步至 NAS」与「从 NAS 克隆至本地」双向同步保障。</span>
+                  <span>支持「单机数据同步至远程节点」与「从远程节点拉取至本地」双向同步保障。</span>
                 </div>
               </div>
             </div>

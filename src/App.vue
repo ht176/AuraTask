@@ -45,17 +45,17 @@ function handleKeyDown(e: KeyboardEvent) {
     return
   }
 
-  // Cmd / Ctrl + / 唤起快捷键速查面板
-  if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.key === '?')) {
+  // 快捷键快速打开操作手册指南: F1, Cmd/Ctrl + ? (Cmd/Ctrl + Shift + /), Cmd/Ctrl + H
+  if (e.key === 'F1' || ((e.metaKey || e.ctrlKey) && (e.key === '?' || (e.shiftKey && e.key === '/') || e.key.toLowerCase() === 'h'))) {
     e.preventDefault()
-    taskStore.isShortcutsOpen = !taskStore.isShortcutsOpen
+    taskStore.isUserGuideOpen = !taskStore.isUserGuideOpen
     return
   }
 
-  // F1 打开操作手册与使用文档
-  if (e.key === 'F1') {
+  // Cmd / Ctrl + / 唤起快捷键速查面板
+  if ((e.metaKey || e.ctrlKey) && e.key === '/') {
     e.preventDefault()
-    taskStore.isUserGuideOpen = !taskStore.isUserGuideOpen
+    taskStore.isShortcutsOpen = !taskStore.isShortcutsOpen
     return
   }
 
@@ -206,7 +206,7 @@ onUnmounted(() => {
       <!-- 番茄专注钟弹窗 -->
       <PomodoroModal />
 
-      <!-- 控制中心与统一偏好设置弹窗 (NAS同步/主题外观/标签库/快捷键/备份) -->
+      <!-- 控制中心与统一偏好设置弹窗 (数据同步/主题外观/标签库/快捷键/备份) -->
       <UnifiedSettingsModal />
 
       <!-- 键盘快捷键与全局热键速查弹窗 -->

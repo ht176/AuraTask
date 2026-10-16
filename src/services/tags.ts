@@ -80,23 +80,28 @@ export const tagService = {
     return newTag
   },
 
-  updateTag(id: string, name: string, color: string): boolean {
+  updateTag(id: string, name: string, color: string): { success: boolean; oldName?: string; newName?: string } {
     const tag = customTags.value.find(t => t.id === id)
-    if (!tag) return false
+    if (!tag) return { success: false }
     const trimmed = name.trim().replace(/^#/, '')
-    if (!trimmed) return false
+    if (!trimmed) return { success: false }
 
+    const oldName = tag.name
     tag.name = trimmed
     tag.color = color
     const matched = TAG_COLOR_PALETTE.find(p => p.color === color)
     tag.bgColor = matched ? matched.bgColor : `${color}25`
     this.save()
-    return true
+    return { success: true, oldName, newName: trimmed }
   },
 
-  deleteTag(id: string): void {
+  deleteTag(id: string): { success: boolean; tagName?: string } {
+    const tag = customTags.value.find(t => t.id === id)
+    if (!tag) return { success: false }
+    const tagName = tag.name
     customTags.value = customTags.value.filter(t => t.id !== id)
     this.save()
+    return { success: true, tagName }
   },
 
   getTagInfo(name: string): CustomTag {

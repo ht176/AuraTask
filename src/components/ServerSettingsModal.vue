@@ -21,7 +21,7 @@ const serverStore = useServerStore()
 const taskStore = useTaskStore()
 
 const showAddForm = ref(false)
-const formName = ref('群晖 NAS')
+const formName = ref('私有云同步节点')
 const formUrl = ref('https://todo.xiaoyunjia.site:6')
 const formToken = ref('')
 const testResult = ref<{ success: boolean; message: string } | null>(null)
@@ -42,7 +42,7 @@ async function handleSaveServer() {
   const id = 'srv_' + Date.now().toString(36)
   const cfg: ServerConfig = {
     id,
-    name: formName.value.trim() || '我的 NAS',
+    name: formName.value.trim() || '远程数据节点',
     url: formUrl.value.trim(),
     token: formToken.value.trim() || undefined,
   }
@@ -72,7 +72,7 @@ async function handleSyncToRemote() {
   syncMsg.value = null
   const res = await serverStore.syncLocalDataToRemote()
   if (res.success) {
-    syncMsg.value = `✓ 成功将本地 ${res.count} 条待办同步至远程 NAS 数据库！`
+    syncMsg.value = `✓ 成功将本地 ${res.count} 条待办同步至远程数据节点！`
     await taskStore.init()
   } else {
     syncMsg.value = `✗ 同步失败：${res.error}`
@@ -114,10 +114,10 @@ function handleClose() {
                 <Check v-if="serverStore.isStandalone" class="w-2.5 h-2.5" />
                 <Wifi v-else-if="serverStore.isConnected" class="w-2.5 h-2.5" />
                 <WifiOff v-else class="w-2.5 h-2.5" />
-                {{ serverStore.isStandalone ? '单机模式 (活跃)' : (serverStore.isConnected ? 'NAS 实时同步' : '未连接') }}
+                {{ serverStore.isStandalone ? '单机模式 (活跃)' : (serverStore.isConnected ? '远程实时同步' : '未连接') }}
               </span>
             </h3>
-            <p class="text-xs text-neutral-400">支持纯离线单机运行，或接入群晖 NAS 云端双向同步</p>
+            <p class="text-xs text-neutral-400">支持纯离线单机运行，或接入私有云远程节点双向同步</p>
           </div>
         </div>
         <button class="p-1.5 hover:text-white text-neutral-400 cursor-pointer" @click="handleClose">
@@ -135,20 +135,20 @@ function handleClose() {
               class="font-semibold px-2 py-0.5 rounded text-[11px]"
               :class="serverStore.isStandalone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-indigo-500/20 text-indigo-300'"
             >
-              {{ serverStore.isStandalone ? '💾 纯本地单机模式 (零依赖·无须服务)' : `🌐 远程 NAS: ${serverStore.activeServer?.name}` }}
+              {{ serverStore.isStandalone ? '💾 纯本地单机模式 (零依赖·无须服务)' : `🌐 远程数据节点: ${serverStore.activeServer?.name}` }}
             </span>
           </div>
           <div class="text-[11px] text-neutral-400 leading-relaxed">
             <template v-if="serverStore.isStandalone">
-              所有清单、四象限、看板与番茄记录持久化保存在当前设备本地，随开随用，零网络请求。随时可绑定远程 NAS 一键上传同步。
+              所有清单、四象限、看板与番茄记录持久化保存在当前设备本地，随开随用，零网络请求。随时可绑定远程节点一键上传同步。
             </template>
             <template v-else>
-              已连接至 {{ serverStore.baseUrl }}，多端设备将与群晖 SQLite 数据库保持实时双向一致，断网时自动无缝回退至本地离线存储。
+              已连接至 {{ serverStore.baseUrl }}，多端设备将与远程 SQLite 数据库保持实时双向一致，断网时自动无缝回退至本地离线存储。
             </template>
           </div>
         </div>
 
-        <!-- 节点选择：单机模式 vs 远程 NAS 节点 -->
+        <!-- 节点选择：单机模式 vs 远程数据节点 -->
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs font-semibold text-neutral-400">
             <span>存储与同步节点选择</span>
@@ -157,7 +157,7 @@ function handleClose() {
               @click="showAddForm = !showAddForm"
             >
               <Plus class="w-3.5 h-3.5" />
-              <span>添加 NAS 节点</span>
+              <span>添加数据节点</span>
             </button>
           </div>
 
@@ -187,7 +187,7 @@ function handleClose() {
               </div>
             </div>
 
-            <!-- 已配置的 NAS 远程节点列表 -->
+            <!-- 已配置的远程节点列表 -->
             <div
               v-for="srv in serverStore.servers"
               :key="srv.id"
@@ -226,7 +226,7 @@ function handleClose() {
           </div>
         </div>
 
-        <!-- 若当前处于 NAS 节点，提供一键同步按钮 -->
+        <!-- 若当前处于远程节点，提供一键同步按钮 -->
         <div v-if="!serverStore.isStandalone && serverStore.activeServer" class="pt-1">
           <button
             class="w-full py-2 px-3 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
@@ -234,7 +234,7 @@ function handleClose() {
             @click="handleSyncToRemote"
           >
             <UploadCloud class="w-3.5 h-3.5" :class="{ 'animate-bounce': serverStore.isSyncing }" />
-            <span>{{ serverStore.isSyncing ? '正在同步数据...' : '一键将本地单机待办数据同步至 NAS' }}</span>
+            <span>{{ serverStore.isSyncing ? '正在同步数据...' : '一键将本地单机待办数据同步至远程节点' }}</span>
           </button>
           <div v-if="syncMsg" class="mt-1.5 text-center text-[11px] text-indigo-200 animate-in fade-in">
             {{ syncMsg }}
@@ -248,7 +248,7 @@ function handleClose() {
             <input
               v-model="formName"
               type="text"
-              placeholder="如：群晖 NAS 局域网 / 外网域名"
+              placeholder="如：私有云局域网 / 远程公网域名"
               class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-indigo-500"
             />
           </div>
@@ -268,7 +268,7 @@ function handleClose() {
             <input
               v-model="formToken"
               type="password"
-              placeholder="若在 NAS 的环境变量中配置了 API_TOKEN 则填写"
+              placeholder="若在服务器节点环境变量中配置了 API_TOKEN 则填写"
               class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono focus:outline-none focus:border-indigo-500"
             />
           </div>

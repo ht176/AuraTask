@@ -18,6 +18,7 @@ export const useServerStore = defineStore('server', {
     activeServerId: 'standalone',
     isConnected: true,
     isSettingsOpen: false,
+    settingsInitialTab: 'server' as 'server' | 'theme' | 'tags' | 'shortcuts' | 'backup' | 'about',
     isTesting: false,
     isSyncing: false,
   }),
@@ -52,6 +53,11 @@ export const useServerStore = defineStore('server', {
   },
 
   actions: {
+    openSettings(tab: 'server' | 'theme' | 'tags' | 'shortcuts' | 'backup' | 'about' = 'server') {
+      this.settingsInitialTab = tab
+      this.isSettingsOpen = true
+    },
+
     loadConfig() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY)
@@ -112,7 +118,7 @@ export const useServerStore = defineStore('server', {
       } catch (err: any) {
         this.isConnected = false
         if (err.name === 'AbortError') {
-          return { success: false, message: '连接超时，请检查 NAS IP/域名及端口是否开放' }
+          return { success: false, message: '连接超时，请检查远程节点 IP/域名及端口是否开放' }
         }
         return { success: false, message: '无法连接到服务器，请检查网络或地址' }
       } finally {
@@ -144,10 +150,10 @@ export const useServerStore = defineStore('server', {
       this.saveConfig()
     },
 
-    // 将单机版现有数据全量同步上传到远程 NAS
+    // 将单机版现有数据全量同步上传到远程节点
     async syncLocalDataToRemote(): Promise<{ success: boolean; count: number; error?: string }> {
       if (this.isStandalone || !this.baseUrl) {
-        return { success: false, count: 0, error: '当前未连接远程 NAS 节点' }
+        return { success: false, count: 0, error: '当前未连接远程数据同步节点' }
       }
 
       this.isSyncing = true

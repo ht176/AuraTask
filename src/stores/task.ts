@@ -300,6 +300,39 @@ export const useTaskStore = defineStore('task', {
         await api.deleteTask(t.id)
       }
       this.tasks = this.tasks.filter(t => !t.completed)
+    },
+
+    async renameTagAcrossTasks(oldName: string, newName: string) {
+      const trimmedOld = oldName.trim().replace(/^#/, '')
+      const trimmedNew = newName.trim().replace(/^#/, '')
+      if (!trimmedOld || !trimmedNew || trimmedOld === trimmedNew) return
+
+      for (const t of this.tasks) {
+        if (t.tags && t.tags.includes(trimmedOld)) {
+          const nextTags = t.tags.map(tag => tag === trimmedOld ? trimmedNew : tag)
+          t.tags = nextTags
+          await api.updateTask(t.id, { tags: nextTags })
+        }
+      }
+      if (this.activeTag === trimmedOld) {
+        this.activeTag = trimmedNew
+      }
+    },
+
+    async deleteTagAcrossTasks(tagName: string) {
+      const trimmed = tagName.trim().replace(/^#/, '')
+      if (!trimmed) return
+
+      for (const t of this.tasks) {
+        if (t.tags && t.tags.includes(trimmed)) {
+          const nextTags = t.tags.filter(tag => tag !== trimmed)
+          t.tags = nextTags
+          await api.updateTask(t.id, { tags: nextTags })
+        }
+      }
+      if (this.activeTag === trimmed) {
+        this.activeTag = null
+      }
     }
   }
 })

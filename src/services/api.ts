@@ -393,7 +393,7 @@ export const api = {
           body: JSON.stringify(jsonData),
         })
       } catch (err) {
-        console.warn('Failed to sync imported backup to remote NAS:', err)
+        console.warn('Failed to sync imported backup to remote server node:', err)
       }
     }
 

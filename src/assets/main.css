@@ -201,37 +201,49 @@ html.theme-light .bg-white\/10.text-white {
   font-weight: 600;
 }
 
-/* 亮色模式：标题、指标与卡片中 bare text-white 自动转为高清晰深色 */
-html.theme-light :is(span, div, p, kbd, label).text-white:not(
-  button,
-  button *,
-  [class*="bg-indigo-"],
-  [class*="bg-emerald-"],
-  [class*="bg-rose-"],
-  [class*="bg-amber-"],
-  [class*="bg-violet-"],
-  [class*="bg-blue-"],
-  [class*="bg-gradient-"]
-) {
+/* 亮色模式：标题、指标与卡片中 bare text-white 自动转为高清晰深色 (除实体高对比色按钮外) */
+html.theme-light :is(span, div, p, kbd, label).text-white {
   color: #0f172a !important;
 }
 
-/* 实体彩色按钮与主行动按钮：在亮色模式下坚定保留纯白文字 */
+/* 仅在纯色主行动实体按钮/徽标上保持纯白文字 */
 html.theme-light button.bg-indigo-600,
 html.theme-light button.bg-indigo-500,
+html.theme-light button.bg-emerald-600,
 html.theme-light button.bg-emerald-500,
 html.theme-light button.bg-rose-600,
 html.theme-light button.bg-rose-500,
+html.theme-light .bg-indigo-600,
+html.theme-light .bg-indigo-500,
+html.theme-light .bg-emerald-600,
+html.theme-light .bg-emerald-500,
+html.theme-light .bg-rose-600,
+html.theme-light .bg-rose-500,
 html.theme-light [class*="bg-gradient-to-"] {
   color: #ffffff !important;
 }
 html.theme-light button.bg-indigo-600 *,
 html.theme-light button.bg-indigo-500 *,
+html.theme-light button.bg-emerald-600 *,
 html.theme-light button.bg-emerald-500 *,
 html.theme-light button.bg-rose-600 *,
 html.theme-light button.bg-rose-500 *,
+html.theme-light .bg-indigo-600 *,
+html.theme-light .bg-indigo-500 *,
+html.theme-light .bg-emerald-600 *,
+html.theme-light .bg-emerald-500 *,
+html.theme-light .bg-rose-600 *,
+html.theme-light .bg-rose-500 *,
 html.theme-light [class*="bg-gradient-to-"] * {
   color: #ffffff;
+}
+
+/* 半透明背景（如 bg-emerald-500/15, bg-indigo-500/15）下的文字在亮色模式下强制深色 */
+html.theme-light [class*="bg-emerald-500/"] :is(span, div, p, label),
+html.theme-light [class*="bg-indigo-500/"] :is(span, div, p, label),
+html.theme-light [class*="bg-amber-500/"] :is(span, div, p, label),
+html.theme-light [class*="bg-rose-500/"] :is(span, div, p, label) {
+  color: #0f172a;
 }
 
 /* 亮色模式：浅色徽标与状态文本加深对比度 (告别苍白欠饱和) */
@@ -425,15 +437,15 @@ html.theme-light ::-webkit-scrollbar-thumb:hover {
 /* 主视图平滑切换 (符合 frontend-design 规范：轻量、无眩光、微淡入) */
 .view-fade-enter-active,
 .view-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .view-fade-enter-from {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(6px);
 }
 
 .view-fade-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px);
 }

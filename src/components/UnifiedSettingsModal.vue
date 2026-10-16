@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {
   Settings,
   Server,
@@ -25,6 +25,8 @@ import {
   Sun,
   Moon,
   Laptop,
+  HelpCircle,
+  ArrowRight,
 } from 'lucide-vue-next'
 import { useServerStore, type ServerConfig } from '../stores/server'
 import { useTaskStore } from '../stores/task'
@@ -39,18 +41,32 @@ const taskStore = useTaskStore()
 type SettingsTab = 'server' | 'theme' | 'tags' | 'shortcuts' | 'backup' | 'about'
 const activeTab = ref<SettingsTab>('server')
 
+// 监听由外部侧边栏等呼出的指定选项卡
+watch(
+  () => serverStore.settingsInitialTab,
+  (newTab) => {
+    if (newTab) {
+      activeTab.value = newTab
+    }
+  },
+  { immediate: true }
+)
+
 // 服务器配置相关状态
 const isEditing = ref(false)
 const editingId = ref<string | null>(null)
-const formName = ref('群晖 NAS')
+const formName = ref('自建同步节点')
 const formUrl = ref('https://todo.xiaoyunjia.site:6')
 const formToken = ref('')
 const testResult = ref<{ success: boolean; message: string } | null>(null)
 const syncMsg = ref<string | null>(null)
 
-// 标签配置相关状态
+// 标签配置与编辑相关状态
 const newTagName = ref('')
 const selectedTagColor = ref(TAG_COLOR_PALETTE[0].color)
+const editingTagId = ref<string | null>(null)
+const editTagName = ref('')
+const editTagColor = ref(TAG_COLOR_PALETTE[0].color)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(() => {
@@ -63,11 +79,11 @@ function handleClose() {
   serverStore.isSettingsOpen = false
 }
 
-// =================== 1. 服务器配置方法 ===================
+// =================== 1. 数据同步与节点配置方法 ===================
 function startAddServer() {
   isEditing.value = true
   editingId.value = null
-  formName.value = '群晖 NAS'
+  formName.value = '自建私有云节点'
   formUrl.value = 'https://todo.xiaoyunjia.site:6'
   formToken.value = ''
   testResult.value = null
@@ -99,7 +115,7 @@ async function handleSaveServer() {
   const id = editingId.value || ('srv_' + Date.now().toString(36))
   const cfg: ServerConfig = {
     id,
-    name: formName.value.trim() || '我的 NAS',
+    name: formName.value.trim() || '远程数据节点',
     url: formUrl.value.trim(),
     token: formToken.value.trim() || undefined,
   }
@@ -130,7 +146,7 @@ async function handleSyncToRemote() {
   syncMsg.value = null
   const res = await serverStore.syncLocalDataToRemote()
   if (res.success) {
-    syncMsg.value = `✓ 成功将本地 ${res.count} 条待办同步至远程 NAS 数据库！`
+    syncMsg.value = `✓ 成功将本地 ${res.count} 条待办同步至远程数据节点！`
     await taskStore.init()
   } else {
     syncMsg.value = `✗ 同步失败：${res.error}`
@@ -145,15 +161,68 @@ function selectTheme(themeId: ThemeType) {
   themeService.setTheme(themeId)
 }
 
-// =================== 3. 标签管理方法 ===================
+// =================== 3. 标签库管理与联动方法 ===================
 function handleAddTag() {
   if (!newTagName.value.trim()) return
   tagService.addTag(newTagName.value.trim(), selectedTagColor.value)
   newTagName.value = ''
 }
 
-function handleDeleteTag(id: string) {
-  tagService.deleteTag(id)
+function startEditTag(tg: CustomTag) {
+  editingTagId.value = tg.id
+  editTagName.value = tg.name
+  editTagColor.value = tg.color
+}
+
+function cancelEditTag() {
+  editingTagId.value = null
+}
+
+async function handleSaveTagEdit() {
+  if (!editingTagId.value || !editTagName.value.trim()) return
+  const res = tagService.updateTag(editingTagId.value, editTagName.value.trim(), editTagColor.value)
+  if (res.success && res.oldName && res.newName && res.oldName !== res.newName) {
+    await taskStore.renameTagAcrossTasks(res.oldName, res.newName)
+  }
+  editingTagId.value = null
+}
+
+async function handleDeleteTagWithPrompt(tg: CustomTag) {
+  const count = getTaskCountForTag(tg.name)
+  let msg = `确定要从标签库中删除「#${tg.name}」吗？`
+  if (count > 0) {
+    msg += `\n检测到有 ${count} 条待办任务正在使用此标签。确认后将同时从所有待办任务中移除此标签。`
+  }
+  if (confirm(msg)) {
+    tagService.deleteTag(tg.id)
+    if (count > 0) {
+      await taskStore.deleteTagAcrossTasks(tg.name)
+    }
+  }
+}
+
+// 扫描所有任务中已使用、但尚未收录在标签库中的散落标签
+const orphanTags = computed(() => {
+  const libSet = new Set(customTags.value.map(t => t.name.toLowerCase()))
+  const orphans = new Set<string>()
+  for (const t of taskStore.tasks) {
+    if (Array.isArray(t.tags)) {
+      for (const tag of t.tags) {
+        if (tag && !libSet.has(tag.toLowerCase())) {
+          orphans.add(tag)
+        }
+      }
+    }
+  }
+  return Array.from(orphans)
+})
+
+function importOrphanTag(tagName: string) {
+  tagService.addTag(tagName)
+}
+
+function importAllOrphanTags() {
+  orphanTags.value.forEach(t => tagService.addTag(t))
 }
 
 function getTaskCountForTag(tagName: string): number {
@@ -196,25 +265,25 @@ function handleOpenUserGuide() {
     @click.self="handleClose"
   >
     <div
-      class="w-full max-w-3xl h-[620px] max-h-[90vh] glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col text-neutral-200 border border-white/10"
+      class="w-full max-w-3xl h-[620px] max-h-[90vh] glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col text-neutral-800 dark:text-neutral-200 border border-black/10 dark:border-white/10"
     >
       <!-- 弹窗顶栏 -->
-      <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-black/20">
+      <div class="px-6 py-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between shrink-0 bg-neutral-100/60 dark:bg-black/20">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
             <Settings class="w-4 h-4" />
           </div>
           <div>
-            <h2 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+            <h2 class="text-sm font-bold text-neutral-900 dark:text-white tracking-wide flex items-center gap-2">
               控制中心与偏好设置
             </h2>
-            <p class="text-xs text-neutral-400">管理主题风格、自定义标签、NAS 远程同步与数据灾备</p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">管理主题风格、自定义标签、远程数据同步与数据灾备</p>
           </div>
         </div>
 
         <button
           @click="handleClose"
-          class="p-1.5 rounded-xl hover:bg-white/10 text-neutral-400 hover:text-white transition-all cursor-pointer"
+          class="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all cursor-pointer"
         >
           <X class="w-4 h-4" />
         </button>
@@ -223,20 +292,20 @@ function handleOpenUserGuide() {
       <!-- 主体双栏区域 -->
       <div class="flex-1 flex overflow-hidden">
         <!-- 左侧设置分类选项卡 -->
-        <aside class="w-48 border-r border-white/5 p-3 space-y-1 shrink-0 bg-black/30 overflow-y-auto text-xs">
+        <aside class="w-48 border-r border-black/5 dark:border-white/5 p-3 space-y-1 shrink-0 bg-neutral-50/80 dark:bg-black/30 overflow-y-auto text-xs">
           <button
             @click="activeTab = 'server'"
             class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all cursor-pointer text-left"
-            :class="activeTab === 'server' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-400 hover:bg-white/5 hover:text-white'"
+            :class="activeTab === 'server' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'"
           >
             <Server class="w-4 h-4 shrink-0" />
-            <span>NAS 同步与存储</span>
+            <span>数据同步与节点</span>
           </button>
 
           <button
             @click="activeTab = 'theme'"
             class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all cursor-pointer text-left"
-            :class="activeTab === 'theme' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-400 hover:bg-white/5 hover:text-white'"
+            :class="activeTab === 'theme' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'"
           >
             <Palette class="w-4 h-4 shrink-0" />
             <span>视觉主题外观</span>
@@ -245,7 +314,7 @@ function handleOpenUserGuide() {
           <button
             @click="activeTab = 'tags'"
             class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all cursor-pointer text-left"
-            :class="activeTab === 'tags' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-400 hover:bg-white/5 hover:text-white'"
+            :class="activeTab === 'tags' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'"
           >
             <Tag class="w-4 h-4 shrink-0" />
             <span>自定义标签库</span>
@@ -254,7 +323,7 @@ function handleOpenUserGuide() {
           <button
             @click="activeTab = 'shortcuts'"
             class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all cursor-pointer text-left"
-            :class="activeTab === 'shortcuts' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-400 hover:bg-white/5 hover:text-white'"
+            :class="activeTab === 'shortcuts' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'"
           >
             <Zap class="w-4 h-4 shrink-0" />
             <span>快捷键与热键</span>
@@ -263,7 +332,7 @@ function handleOpenUserGuide() {
           <button
             @click="activeTab = 'backup'"
             class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all cursor-pointer text-left"
-            :class="activeTab === 'backup' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-400 hover:bg-white/5 hover:text-white'"
+            :class="activeTab === 'backup' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'"
           >
             <Download class="w-4 h-4 shrink-0" />
             <span>数据灾备与迁移</span>
@@ -272,7 +341,7 @@ function handleOpenUserGuide() {
           <button
             @click="activeTab = 'about'"
             class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all cursor-pointer text-left"
-            :class="activeTab === 'about' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-400 hover:bg-white/5 hover:text-white'"
+            :class="activeTab === 'about' ? 'bg-indigo-600 text-white shadow-md font-semibold' : 'text-neutral-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'"
           >
             <Sparkles class="w-4 h-4 shrink-0" />
             <span>软件版本与更新</span>
@@ -281,16 +350,16 @@ function handleOpenUserGuide() {
         </aside>
 
         <!-- 右侧主内容展示区 -->
-        <main class="flex-1 overflow-y-auto p-6 text-xs text-neutral-300 leading-relaxed">
-          <!-- 1. NAS 同步与远程服务配置 -->
+        <main class="flex-1 overflow-y-auto p-6 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+          <!-- 1. 数据同步与远程节点配置 -->
           <section v-if="activeTab === 'server'" class="space-y-4">
             <div class="flex items-center justify-between pb-1">
               <div>
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <Server class="w-4 h-4 text-indigo-400" />
-                  工作模式与远程 NAS 节点
+                <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Server class="w-4 h-4 text-indigo-500" />
+                  工作模式与远程数据同步节点
                 </h3>
-                <p class="text-neutral-400 text-[11px]">切换单机离线存储或配置私有云群晖/威联通 NAS 服务端</p>
+                <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">切换单机离线存储或配置私有云/远程数据节点</p>
               </div>
 
               <button
@@ -299,83 +368,83 @@ function handleOpenUserGuide() {
                 class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
               >
                 <Plus class="w-3.5 h-3.5" />
-                <span>添加 NAS 节点</span>
+                <span>添加同步节点</span>
               </button>
             </div>
 
             <!-- 当前状态横幅 -->
-            <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+            <div class="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <span
                   class="w-2.5 h-2.5 rounded-full shrink-0"
-                  :class="serverStore.isStandalone ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : (serverStore.isConnected ? 'bg-indigo-400 shadow-sm shadow-indigo-400/50' : 'bg-rose-400 animate-pulse')"
+                  :class="serverStore.isStandalone ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : (serverStore.isConnected ? 'bg-indigo-500 shadow-sm shadow-indigo-500/50' : 'bg-rose-500 animate-pulse')"
                 ></span>
                 <div>
-                  <div class="font-semibold text-white">
-                    {{ serverStore.isStandalone ? '本地单机模式 (零依赖·无须服务)' : `已连接远程 NAS: ${serverStore.activeServer?.name}` }}
+                  <div class="font-semibold text-neutral-900 dark:text-white">
+                    {{ serverStore.isStandalone ? '本地单机模式 (零依赖·无须服务)' : `已连接远程节点: ${serverStore.activeServer?.name}` }}
                   </div>
-                  <div class="text-[11px] text-neutral-400 font-mono">
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
                     {{ serverStore.isStandalone ? '数据存储在本地 SQLite，断网随开随用' : serverStore.baseUrl }}
                   </div>
                 </div>
               </div>
 
-              <!-- 若处于远程 NAS 模式，展示一键同步本地数据到 NAS 按钮 -->
+              <!-- 若处于远程模式，展示一键同步本地数据到远程节点按钮 -->
               <button
                 v-if="!serverStore.isStandalone"
                 @click="handleSyncToRemote"
                 :disabled="serverStore.isSyncing"
-                class="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                class="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <UploadCloud class="w-3.5 h-3.5" :class="{ 'animate-bounce': serverStore.isSyncing }" />
-                <span>{{ serverStore.isSyncing ? '同步中...' : '同步单机数据至 NAS' }}</span>
+                <span>{{ serverStore.isSyncing ? '同步中...' : '同步单机数据至远程节点' }}</span>
               </button>
             </div>
 
-            <div v-if="syncMsg" class="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-200 text-center animate-in fade-in">
+            <div v-if="syncMsg" class="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-800 dark:text-indigo-200 text-center animate-in fade-in">
               {{ syncMsg }}
             </div>
 
             <!-- 编辑/添加表单 -->
-            <div v-if="isEditing" class="p-4 rounded-2xl bg-black/40 border border-indigo-500/30 space-y-3.5 animate-in fade-in">
-              <div class="flex items-center justify-between pb-1 border-b border-white/5">
-                <span class="font-bold text-white flex items-center gap-1.5">
-                  <Edit3 class="w-3.5 h-3.5 text-indigo-400" />
-                  {{ editingId ? '编辑 NAS 远程节点地址' : '配置新 NAS 节点' }}
+            <div v-if="isEditing" class="p-4 rounded-2xl bg-neutral-100/70 dark:bg-black/40 border border-indigo-500/30 space-y-3.5 animate-in fade-in">
+              <div class="flex items-center justify-between pb-1 border-b border-black/5 dark:border-white/5">
+                <span class="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                  <Edit3 class="w-3.5 h-3.5 text-indigo-500" />
+                  {{ editingId ? '编辑远程同步节点地址' : '配置新数据同步节点' }}
                 </span>
-                <button @click="cancelEditServer" class="text-neutral-400 hover:text-white cursor-pointer">
+                <button @click="cancelEditServer" class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer">
                   <X class="w-4 h-4" />
                 </button>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-neutral-400 text-[11px] mb-1">节点名称</label>
+                  <label class="block text-neutral-600 dark:text-neutral-400 text-[11px] mb-1">节点名称</label>
                   <input
                     v-model="formName"
                     type="text"
-                    placeholder="如：群晖 NAS 局域网 / 外网域名"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="如：私有云局域网 / 远程公网域名"
+                    class="w-full bg-white dark:bg-white/5 border border-neutral-300 dark:border-white/10 rounded-xl px-3 py-2 text-neutral-900 dark:text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
                 <div>
-                  <label class="block text-neutral-400 text-[11px] mb-1">访问令牌 (API Token · 可选)</label>
+                  <label class="block text-neutral-600 dark:text-neutral-400 text-[11px] mb-1">访问令牌 (API Token · 可选)</label>
                   <input
                     v-model="formToken"
                     type="password"
                     placeholder="如无密码保护可留空"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    class="w-full bg-white dark:bg-white/5 border border-neutral-300 dark:border-white/10 rounded-xl px-3 py-2 text-neutral-900 dark:text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label class="block text-neutral-400 text-[11px] mb-1">远程服务完整地址 (含端口 / 协议)</label>
+                <label class="block text-neutral-600 dark:text-neutral-400 text-[11px] mb-1">远程服务完整地址 (含协议与端口)</label>
                 <input
                   v-model="formUrl"
                   type="text"
                   placeholder="如: https://todo.xiaoyunjia.site:6 或 http://192.168.1.8:3001"
-                  class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-indigo-500"
+                  class="w-full bg-white dark:bg-white/5 border border-neutral-300 dark:border-white/10 rounded-xl px-3 py-2 text-neutral-900 dark:text-white font-mono focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
@@ -383,7 +452,7 @@ function handleOpenUserGuide() {
               <div
                 v-if="testResult"
                 class="p-2.5 rounded-xl text-xs flex items-center gap-2"
-                :class="testResult.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'"
+                :class="testResult.success ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'"
               >
                 <CheckCircle2 v-if="testResult.success" class="w-4 h-4 shrink-0" />
                 <AlertCircle v-else class="w-4 h-4 shrink-0" />
@@ -394,13 +463,13 @@ function handleOpenUserGuide() {
                 <button
                   @click="handleTestConnection"
                   :disabled="serverStore.isTesting"
-                  class="px-3.5 py-1.5 rounded-xl border border-white/10 text-neutral-300 hover:bg-white/5 transition-colors cursor-pointer"
+                  class="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 >
                   {{ serverStore.isTesting ? '正在探测...' : '测试连接' }}
                 </button>
                 <button
                   @click="cancelEditServer"
-                  class="px-3.5 py-1.5 rounded-xl border border-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  class="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   取消
                 </button>
@@ -415,29 +484,29 @@ function handleOpenUserGuide() {
 
             <!-- 节点列表 -->
             <div class="space-y-2">
-              <div class="text-[11px] font-semibold text-neutral-400">可用存储模式与节点列表</div>
+              <div class="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">可用存储模式与节点列表</div>
 
               <!-- 单机离线模式 -->
               <div
-                class="flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer"
+                class="flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer"
                 :class="serverStore.isStandalone
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-sm'
-                  : 'bg-white/[0.02] border-white/5 text-neutral-300 hover:bg-white/[0.05]'"
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-neutral-900 dark:text-white shadow-xs'
+                  : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 text-neutral-800 dark:text-neutral-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]'"
                 @click="handleSelectStandalone"
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-5 h-5 rounded-full flex items-center justify-center transition-all"
-                    :class="serverStore.isStandalone ? 'bg-emerald-400 text-black' : 'border border-neutral-500 text-transparent'"
+                    class="w-5 h-5 rounded-full flex items-center justify-center transition-all shrink-0"
+                    :class="serverStore.isStandalone ? 'bg-emerald-500 text-white' : 'border border-neutral-400 dark:border-neutral-500 text-transparent'"
                   >
                     <Check class="w-3 h-3 stroke-[3]" />
                   </div>
                   <div>
-                    <div class="font-semibold flex items-center gap-2">
+                    <div class="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white">
                       <span>本地单机模式 (Standalone)</span>
-                      <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">纯净离线</span>
+                      <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">纯净离线</span>
                     </div>
-                    <div class="text-[11px] text-neutral-400">数据仅驻留在本设备，无需网络，极速安全</div>
+                    <div class="text-[11px] text-neutral-600 dark:text-neutral-400">数据仅驻留在本设备，无需网络，极速安全</div>
                   </div>
                 </div>
               </div>
@@ -446,33 +515,33 @@ function handleOpenUserGuide() {
               <div
                 v-for="srv in serverStore.servers"
                 :key="srv.id"
-                class="flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer group"
+                class="flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer group"
                 :class="!serverStore.isStandalone && serverStore.activeServerId === srv.id
-                  ? 'bg-indigo-500/15 border-indigo-500/40 text-white shadow-sm'
-                  : 'bg-white/[0.02] border-white/5 text-neutral-300 hover:bg-white/[0.05]'"
+                  ? 'bg-indigo-500/15 border-indigo-500/40 text-neutral-900 dark:text-white shadow-xs'
+                  : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 text-neutral-800 dark:text-neutral-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]'"
                 @click="handleSwitchServer(srv.id)"
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-5 h-5 rounded-full flex items-center justify-center transition-all"
-                    :class="!serverStore.isStandalone && serverStore.activeServerId === srv.id ? 'bg-indigo-500 text-white' : 'border border-neutral-500 text-transparent'"
+                    class="w-5 h-5 rounded-full flex items-center justify-center transition-all shrink-0"
+                    :class="!serverStore.isStandalone && serverStore.activeServerId === srv.id ? 'bg-indigo-600 text-white' : 'border border-neutral-400 dark:border-neutral-500 text-transparent'"
                   >
                     <Check class="w-3 h-3 stroke-[3]" />
                   </div>
                   <div>
-                    <div class="font-semibold flex items-center gap-2">
+                    <div class="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white">
                       <span>{{ srv.name }}</span>
-                      <span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300">远程实时同步</span>
+                      <span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium">远程实时同步</span>
                     </div>
-                    <div class="text-[11px] text-neutral-400 font-mono">{{ srv.url }}</div>
+                    <div class="text-[11px] text-neutral-600 dark:text-neutral-400 font-mono">{{ srv.url }}</div>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <!-- 编辑按钮 (满足用户的专门需求) -->
+                  <!-- 编辑按钮 -->
                   <button
                     @click.stop="startEditServer(srv)"
-                    class="p-1.5 rounded-lg text-neutral-400 hover:text-indigo-300 hover:bg-white/10 transition-all cursor-pointer"
+                    class="p-1.5 rounded-lg text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
                     title="编辑此远程地址与端口"
                   >
                     <Edit3 class="w-3.5 h-3.5" />
@@ -480,7 +549,7 @@ function handleOpenUserGuide() {
                   <!-- 删除按钮 -->
                   <button
                     @click.stop="serverStore.removeServer(srv.id)"
-                    class="p-1.5 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-white/10 transition-all cursor-pointer"
+                    class="p-1.5 rounded-lg text-neutral-400 hover:text-rose-500 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
                     title="删除节点"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
@@ -493,11 +562,11 @@ function handleOpenUserGuide() {
           <!-- 2. 视觉主题外观 -->
           <section v-if="activeTab === 'theme'" class="space-y-4">
             <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <Palette class="w-4 h-4 text-indigo-400" />
+              <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <Palette class="w-4 h-4 text-indigo-500" />
                 主题与视觉风格选择
               </h3>
-              <p class="text-neutral-400 text-[11px]">告别单一沉闷，挑选适合当前采光与审美偏好的沉浸主题</p>
+              <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">告别单一沉闷，挑选适合当前采光与审美偏好的沉浸主题</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -507,65 +576,78 @@ function handleOpenUserGuide() {
                 @click="selectTheme(th.id)"
                 class="p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group"
                 :class="currentTheme === th.id
-                  ? 'border-indigo-500 bg-white/[0.08] shadow-lg shadow-indigo-500/15 ring-1 ring-indigo-500'
-                  : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20'"
+                  ? 'border-indigo-500 bg-indigo-50/30 dark:bg-white/[0.08] shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500'
+                  : 'border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.05]'"
               >
                 <!-- 预览色条背景 -->
                 <div
-                  class="h-10 w-full rounded-xl bg-gradient-to-r mb-3 border border-white/10 flex items-center justify-end px-3 shadow-inner"
+                  class="h-10 w-full rounded-xl bg-gradient-to-r mb-3 border border-black/5 dark:border-white/10 flex items-center justify-end px-3 shadow-inner"
                   :class="th.bgPreview"
                 >
                   <span class="w-4 h-4 rounded-full shadow-md" :style="{ backgroundColor: th.accentColor }"></span>
                 </div>
 
                 <div class="flex items-center justify-between">
-                  <div class="font-bold text-white text-xs">{{ th.name }}</div>
+                  <div class="font-bold text-neutral-900 dark:text-white text-xs">{{ th.name }}</div>
                   <div
                     v-if="currentTheme === th.id"
-                    class="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px]"
+                    class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]"
                   >
                     <Check class="w-3 h-3 stroke-[3]" />
                   </div>
                 </div>
 
-                <p class="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+                <p class="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
                   {{ th.desc }}
                 </p>
               </div>
             </div>
           </section>
 
-          <!-- 3. 自定义标签管理 -->
+          <!-- 3. 自定义标签管理与联动机制 -->
           <section v-if="activeTab === 'tags'" class="space-y-4">
             <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <Tag class="w-4 h-4 text-emerald-400" />
+              <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <Tag class="w-4 h-4 text-emerald-500" />
                 自定义分类标签库
               </h3>
-              <p class="text-neutral-400 text-[11px]">自由创建业务、项目、生活标签，并在待办中一键打标筛选</p>
+              <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">标准化标签颜色与命名，并与左侧栏及所有待办实时双向联动</p>
             </div>
 
-            <!-- 添加标签条 -->
-            <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+            <!-- 标签机制说明卡片 (直接解答用户疑问) -->
+            <div class="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-neutral-700 dark:text-neutral-300 space-y-1.5">
+              <div class="font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 text-xs">
+                <HelpCircle class="w-4 h-4 shrink-0 text-indigo-500" />
+                <span>自定义标签库与左侧栏的关系及使用说明</span>
+              </div>
+              <ul class="text-[11px] space-y-1 text-neutral-600 dark:text-neutral-400 list-disc list-inside leading-relaxed">
+                <li><strong>标签库（Tag Library）</strong>：系统级标准词表，定义推荐标签及其专属配色，新建或编辑待办时作为智能联想候选。</li>
+                <li><strong>左侧栏分类标签</strong>：动态汇总「已定义的标签库」与「任务中正在使用中的标签」，点击即可单选过滤。</li>
+                <li><strong>双向联动修改</strong>：在下方编辑标签名称或色彩，系统将<strong>自动批量更新</strong>所有关联待办；删除标签时可一键将该标签从待办中解绑。</li>
+              </ul>
+            </div>
+
+            <!-- 添加新标签条 -->
+            <div class="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/10 space-y-3">
               <div class="flex items-center gap-2">
                 <input
                   v-model="newTagName"
                   type="text"
-                  placeholder="输入新标签名称... (如: 读书、财务、重构)"
-                  class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-xs"
+                  placeholder="输入新标签名称... (如: 财务、重构、学习)"
+                  class="flex-1 bg-white dark:bg-white/5 border border-neutral-300 dark:border-white/10 rounded-xl px-3 py-2 text-neutral-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs"
                   @keyup.enter="handleAddTag"
                 />
                 <button
                   @click="handleAddTag"
                   :disabled="!newTagName.trim()"
-                  class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition-all shadow-md shadow-indigo-600/25 disabled:opacity-50 cursor-pointer"
+                  class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition-all shadow-md shadow-indigo-600/25 disabled:opacity-50 cursor-pointer shrink-0"
                 >
                   添加标签
                 </button>
               </div>
 
               <!-- 颜色选择器 -->
-              <div class="flex items-center gap-2 text-[11px] text-neutral-400">
+              <div class="flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
                 <span>选择标签标识色：</span>
                 <div class="flex items-center gap-1.5">
                   <button
@@ -574,41 +656,122 @@ function handleOpenUserGuide() {
                     @click="selectedTagColor = pal.color"
                     class="w-5 h-5 rounded-full transition-transform cursor-pointer relative"
                     :style="{ backgroundColor: pal.color }"
-                    :class="selectedTagColor === pal.color ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-black' : 'hover:scale-110'"
+                    :class="selectedTagColor === pal.color ? 'scale-125 ring-2 ring-indigo-600 dark:ring-white ring-offset-2 ring-offset-white dark:ring-offset-black' : 'hover:scale-110'"
                   ></button>
                 </div>
               </div>
             </div>
 
-            <!-- 现有标签网格 -->
+            <!-- 现有标签库网格 (支持就地重命名、调色与删除联动) -->
             <div class="space-y-2 pt-1">
-              <div class="text-[11px] font-semibold text-neutral-400">已定义的标签清单 ({{ customTags.length }} 个)</div>
+              <div class="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 flex items-center justify-between">
+                <span>标签库标准清单 ({{ customTags.length }} 个)</span>
+                <span class="text-[10px] text-neutral-400">点击铅笔即可重命名并联动修改全部待办</span>
+              </div>
 
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div
                   v-for="tg in customTags"
                   :key="tg.id"
-                  class="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-between group hover:border-white/15 transition-all"
+                  class="p-2.5 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between group hover:border-black/15 dark:hover:border-white/15 transition-all"
                 >
-                  <div class="flex items-center gap-2">
+                  <!-- 正常展示态 -->
+                  <div v-if="editingTagId !== tg.id" class="flex items-center gap-2 min-w-0">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: tg.color }"></span>
                     <span
-                      class="px-2 py-0.5 rounded-md font-medium text-xs font-mono"
+                      class="px-2 py-0.5 rounded-md font-medium text-xs font-mono truncate"
                       :style="{ color: tg.color, backgroundColor: tg.bgColor }"
                     >
                       #{{ tg.name }}
                     </span>
-                    <span class="text-[10px] text-neutral-500">({{ getTaskCountForTag(tg.name) }}项)</span>
+                    <span class="text-[10px] text-neutral-500 shrink-0 font-mono">({{ getTaskCountForTag(tg.name) }}项)</span>
                   </div>
 
-                  <button
-                    @click="handleDeleteTag(tg.id)"
-                    class="opacity-0 group-hover:opacity-100 p-1 text-neutral-500 hover:text-rose-400 transition-all cursor-pointer"
-                    title="删除标签"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
+                  <!-- 正在编辑态 -->
+                  <div v-else class="flex-1 flex items-center gap-2">
+                    <input
+                      v-model="editTagName"
+                      type="text"
+                      class="flex-1 bg-white dark:bg-white/10 border border-indigo-500 rounded-lg px-2 py-1 text-xs text-neutral-900 dark:text-white focus:outline-none"
+                      @keyup.enter="handleSaveTagEdit"
+                    />
+                    <!-- 调色快捷选择 -->
+                    <div class="flex items-center gap-1">
+                      <button
+                        v-for="pal in TAG_COLOR_PALETTE.slice(0, 4)"
+                        :key="pal.color"
+                        @click="editTagColor = pal.color"
+                        class="w-3.5 h-3.5 rounded-full cursor-pointer"
+                        :style="{ backgroundColor: pal.color }"
+                        :class="editTagColor === pal.color ? 'ring-1 ring-indigo-500 scale-110' : ''"
+                      ></button>
+                    </div>
+                  </div>
+
+                  <!-- 操作按钮区 -->
+                  <div class="flex items-center gap-1 shrink-0 ml-2">
+                    <template v-if="editingTagId === tg.id">
+                      <button
+                        @click="handleSaveTagEdit"
+                        class="p-1 rounded text-emerald-600 dark:text-emerald-400 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                        title="保存修改"
+                      >
+                        <Check class="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        @click="cancelEditTag"
+                        class="p-1 rounded text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                        title="取消编辑"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                      </button>
+                    </template>
+                    <template v-else>
+                      <button
+                        @click="startEditTag(tg)"
+                        class="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all cursor-pointer"
+                        title="编辑标签名称与标识色"
+                      >
+                        <Edit3 class="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        @click="handleDeleteTagWithPrompt(tg)"
+                        class="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-500 transition-all cursor-pointer"
+                        title="删除标签 (联动清理现有待办)"
+                      >
+                        <Trash2 class="w-3.5 h-3.5" />
+                      </button>
+                    </template>
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- 发现任务中未收录的标签 (一键收录进库) -->
+            <div v-if="orphanTags.length > 0" class="pt-3 border-t border-black/5 dark:border-white/5 space-y-2">
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="text-neutral-600 dark:text-neutral-400 font-semibold flex items-center gap-1.5">
+                  <span>从待办中检测到 {{ orphanTags.length }} 个未收录至库的散落标签：</span>
+                </div>
+                <button
+                  @click="importAllOrphanTags"
+                  class="px-2 py-0.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[10px] cursor-pointer transition-colors"
+                >
+                  一键全部收录进库
+                </button>
+              </div>
+
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="tgName in orphanTags"
+                  :key="tgName"
+                  @click="importOrphanTag(tgName)"
+                  class="px-2 py-0.5 rounded-md text-[11px] bg-black/5 dark:bg-white/5 hover:bg-indigo-500/15 border border-black/5 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:text-indigo-600 dark:hover:text-indigo-300 font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                  title="点击收录到标签库"
+                >
+                  <span>+ #{{ tgName }}</span>
+                  <span class="text-[9px] text-neutral-400">({{ getTaskCountForTag(tgName) }})</span>
+                </button>
               </div>
             </div>
           </section>
@@ -616,76 +779,80 @@ function handleOpenUserGuide() {
           <!-- 4. 全局快捷键与热键 -->
           <section v-if="activeTab === 'shortcuts'" class="space-y-4">
             <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <Zap class="w-4 h-4 text-amber-400" />
+              <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <Zap class="w-4 h-4 text-amber-500" />
                 全局系统快捷键与应用内热键
               </h3>
-              <p class="text-neutral-400 text-[11px]">即使窗口最小化到系统托盘，也能毫秒级原生唤醒</p>
+              <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">即使窗口最小化到系统托盘，也能毫秒级原生唤醒</p>
             </div>
 
-            <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 divide-y divide-white/5 space-y-2">
+            <div class="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 divide-y divide-black/5 dark:divide-white/5 space-y-2">
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">全局极速录入待办</div>
-                  <div class="text-[11px] text-neutral-400">任意软件中呼出 Spotlight 智能录入框</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">全局极速录入待办</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">任意软件中呼出 Spotlight 智能录入框</div>
                 </div>
-                <div class="flex items-center gap-1 font-mono text-xs text-white">
-                  <kbd class="px-2 py-1 rounded bg-white/10">Ctrl / ⌘ + Shift + K</kbd>
-                  <span class="text-neutral-500 text-[10px]">或</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10">Alt + Shift + K</kbd>
+                <div class="flex items-center gap-1 font-mono text-xs">
+                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + K</kbd>
+                  <span class="text-neutral-400 text-[10px]">或</span>
+                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">Alt + Shift + K</kbd>
                 </div>
               </div>
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">应用内极速录入待办（自动聚焦输入框）</div>
-                  <div class="text-[11px] text-neutral-400">列表任意处直接按单键 N 亦可极速录入</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">应用内极速录入待办（自动聚焦输入框）</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">列表任意处直接按单键 N 亦可极速录入</div>
                 </div>
-                <div class="flex items-center gap-1 font-mono text-xs text-white">
-                  <kbd class="px-2 py-1 rounded bg-white/10">⌘ / Ctrl + K</kbd>
-                  <kbd class="px-2 py-1 rounded bg-white/10">⌘ / Ctrl + N</kbd>
-                  <kbd class="px-1.5 py-1 rounded bg-white/10 text-indigo-300">N</kbd>
+                <div class="flex items-center gap-1 font-mono text-xs">
+                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">⌘ / Ctrl + K</kbd>
+                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">⌘ / Ctrl + N</kbd>
+                  <kbd class="px-1.5 py-1 rounded bg-indigo-50 dark:bg-white/10 text-indigo-600 dark:text-indigo-300 font-semibold">N</kbd>
                 </div>
               </div>
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">一键切换主视图</div>
-                  <div class="text-[11px] text-neutral-400">1:我的一天 2:收集箱 3:近期 4:四象限 5:看板 6:已完成</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">一键切换主视图</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">1:我的一天 2:收集箱 3:近期 4:四象限 5:看板 6:已完成</div>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-xs text-white">数字键 1 ~ 6</kbd>
+                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">数字键 1 ~ 6</kbd>
               </div>
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">显示 / 隐藏主窗口</div>
-                  <div class="text-[11px] text-neutral-400">一键快速置顶或最小化主界面</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">显示 / 隐藏主窗口</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">一键快速置顶或最小化主界面</div>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-xs text-white">Ctrl / ⌘ + Shift + T</kbd>
+                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + T</kbd>
               </div>
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">切换迷你悬浮便签</div>
-                  <div class="text-[11px] text-neutral-400">进入/退出桌面置顶小窗便签模式</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">切换迷你悬浮便签</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">进入/退出桌面置顶小窗便签模式</div>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-xs text-white">Ctrl / ⌘ + Shift + M</kbd>
+                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + M</kbd>
               </div>
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">随时唤起番茄钟</div>
-                  <div class="text-[11px] text-neutral-400">开启或暂停 25 分钟心流专注</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">随时唤起番茄钟</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">开启或暂停 25 分钟心流专注</div>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-xs text-white">Ctrl / ⌘ + Shift + P</kbd>
+                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + P</kbd>
               </div>
 
               <div class="pt-2 flex items-center justify-between">
                 <div>
-                  <div class="font-medium text-white">打开完整操作文档</div>
-                  <div class="text-[11px] text-neutral-400">随时随地查阅全部功能操作手册</div>
+                  <div class="font-medium text-neutral-900 dark:text-white">打开完整操作手册指南</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">随时随地查阅全部功能操作手册与语法技巧</div>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-xs text-white">F1</kbd>
+                <div class="flex items-center gap-1 font-mono text-xs">
+                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">F1</kbd>
+                  <span class="text-neutral-400 text-[10px]">或</span>
+                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">⌘ / Ctrl + ?</kbd>
+                </div>
               </div>
             </div>
           </section>
@@ -693,20 +860,20 @@ function handleOpenUserGuide() {
           <!-- 5. 数据灾备与迁移 -->
           <section v-if="activeTab === 'backup'" class="space-y-4">
             <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <Download class="w-4 h-4 text-emerald-400" />
+              <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <Download class="w-4 h-4 text-emerald-500" />
                 数据灾备与跨设备迁移
               </h3>
-              <p class="text-neutral-400 text-[11px]">数据完全属于您，支持标准 JSON 全量导出与幂等恢复</p>
+              <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">数据完全属于您，支持标准 JSON 全量导出与幂等恢复</p>
             </div>
 
             <div class="grid grid-cols-2 gap-3 pt-1">
-              <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-2">
-                <div class="font-semibold text-white flex items-center gap-2">
-                  <Download class="w-4 h-4 text-indigo-400" />
+              <div class="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 space-y-2">
+                <div class="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Download class="w-4 h-4 text-indigo-500" />
                   <span>导出全量 JSON 备份</span>
                 </div>
-                <p class="text-neutral-400 text-[11px]">
+                <p class="text-neutral-600 dark:text-neutral-400 text-[11px]">
                   生成包含所有清单、待办、四象限、子任务及历史番茄时长的备份文件。
                 </p>
                 <button
@@ -717,17 +884,17 @@ function handleOpenUserGuide() {
                 </button>
               </div>
 
-              <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-2">
-                <div class="font-semibold text-white flex items-center gap-2">
-                  <Upload class="w-4 h-4 text-emerald-400" />
+              <div class="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 space-y-2">
+                <div class="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Upload class="w-4 h-4 text-emerald-500" />
                   <span>恢复与导入备份</span>
                 </div>
-                <p class="text-neutral-400 text-[11px]">
+                <p class="text-neutral-600 dark:text-neutral-400 text-[11px]">
                   选择历史 JSON 备份文件，系统进行安全幂等合并，不覆盖现有进度。
                 </p>
                 <button
                   @click="triggerImport"
-                  class="mt-2 w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-xs transition-colors cursor-pointer"
+                  class="mt-2 w-full py-2 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-neutral-900 dark:text-white font-medium text-xs transition-colors cursor-pointer border border-neutral-300 dark:border-white/10"
                 >
                   选择文件并恢复
                 </button>
@@ -739,18 +906,18 @@ function handleOpenUserGuide() {
           <!-- 6. 软件版本与自动更新 -->
           <section v-if="activeTab === 'about'" class="space-y-4">
             <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <Sparkles class="w-4 h-4 text-indigo-400" />
+              <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <Sparkles class="w-4 h-4 text-indigo-500" />
                 版本信息与自动更新
               </h3>
-              <p class="text-neutral-400 text-[11px]">AuraTask 极简高效待办工作流</p>
+              <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">AuraTask 极简高效待办工作流</p>
             </div>
 
-            <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
+            <div class="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 space-y-3">
               <div class="flex items-center justify-between">
                 <div>
-                  <div class="font-bold text-white text-sm">AuraTask 客户端</div>
-                  <div class="text-[11px] text-neutral-400 font-mono">当前版本：v1.0.4</div>
+                  <div class="font-bold text-neutral-900 dark:text-white text-sm">AuraTask 客户端</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.4</div>
                 </div>
 
                 <button
@@ -763,7 +930,7 @@ function handleOpenUserGuide() {
                 </button>
               </div>
 
-              <div class="text-[11px] text-neutral-400 pt-2 border-t border-white/5 leading-relaxed">
+              <div class="text-[11px] text-neutral-500 dark:text-neutral-400 pt-2 border-t border-black/5 dark:border-white/5 leading-relaxed">
                 更新端点连接至官方 GitHub Releases，具备 Minisign 独立数字签名校验，保障更新安全可靠。
               </div>
             </div>
@@ -771,8 +938,8 @@ function handleOpenUserGuide() {
             <!-- 操作手册入口 -->
             <div class="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between">
               <div>
-                <div class="font-semibold text-indigo-300">需要查阅详细操作技巧？</div>
-                <div class="text-[11px] text-neutral-400">包含优先级与四象限法则关系、自然语言智能录入语法</div>
+                <div class="font-semibold text-indigo-700 dark:text-indigo-300">需要查阅详细操作技巧？</div>
+                <div class="text-[11px] text-neutral-600 dark:text-neutral-400">包含优先级与四象限法则关系、自然语言智能录入语法、数据同步</div>
               </div>
               <button
                 @click="handleOpenUserGuide"

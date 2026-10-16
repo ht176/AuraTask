@@ -70,11 +70,11 @@ async function handleToggle(e: MouseEvent) {
     sound.playCheckSound()
     animationService.triggerCheckConfetti({ x: e.clientX, y: e.clientY })
 
-    // 3. 留出 150ms 视觉驻留感知打勾成果，随后由 TransitionGroup 顺滑交接
+    // 3. 留出 280ms 优雅视觉驻留让用户从容感知打勾回弹与完成成果，随后由 TransitionGroup 顺滑交接
     setTimeout(async () => {
       await taskStore.toggleTask(props.task.id, { skipFx: true })
       isToggling.value = false
-    }, 150)
+    }, 280)
   } else {
     // 反选恢复任务
     if (checkBtnRef.value) {

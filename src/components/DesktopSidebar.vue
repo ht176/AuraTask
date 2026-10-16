@@ -20,6 +20,7 @@ import {
   Keyboard,
   BookOpen,
   Settings,
+  X,
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
@@ -47,6 +48,21 @@ function handleAddCategory() {
   taskStore.createCategory(newCatName.value.trim())
   newCatName.value = ''
   showAddCategory.value = false
+}
+
+async function handleDeleteTagFromSidebar(tagName: string) {
+  const count = taskStore.tasks.filter(t => Array.isArray(t.tags) && t.tags.includes(tagName)).length
+  let msg = `确定要清理标签「#${tagName}」吗？`
+  if (count > 0) {
+    msg += `\n此操作将同时从 ${count} 条待办任务中移除该标签。`
+  }
+  if (confirm(msg)) {
+    const libTag = customTags.value.find(t => t.name.toLowerCase() === tagName.toLowerCase())
+    if (libTag) {
+      tagService.deleteTag(libTag.id)
+    }
+    await taskStore.deleteTagAcrossTasks(tagName)
+  }
 }
 
 function handleExportBackup() {
@@ -272,29 +288,41 @@ async function handleFileImport(e: Event) {
             <span>分类标签</span>
           </div>
           <button
-            @click="serverStore.isSettingsOpen = true"
+            @click="serverStore.openSettings('tags')"
             class="p-0.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            title="管理自定义标签"
+            title="管理自定义标签库 (重命名/调色/收录)"
           >
-            <Plus class="w-3.5 h-3.5" />
+            <Settings class="w-3.5 h-3.5" />
           </button>
         </div>
         <div class="flex flex-wrap gap-1.5 px-2">
-          <button
+          <div
             v-for="tg in displayTags"
             :key="tg.name"
-            class="px-2 py-0.5 rounded-md text-[11px] transition-all cursor-pointer border flex items-center gap-1 font-mono"
+            class="group/tag inline-flex items-center rounded-md border text-[11px] font-mono transition-all overflow-hidden"
             :style="{
               borderColor: taskStore.activeTag === tg.name ? tg.color : 'rgba(255, 255, 255, 0.08)',
               backgroundColor: taskStore.activeTag === tg.name ? tg.bgColor : 'rgba(255, 255, 255, 0.02)',
               color: taskStore.activeTag === tg.name ? tg.color : 'inherit',
-              opacity: taskStore.activeTag === tg.name ? 1 : 0.75
+              opacity: taskStore.activeTag === tg.name ? 1 : 0.8
             }"
-            @click="taskStore.activeTag = taskStore.activeTag === tg.name ? null : tg.name"
           >
-            <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: tg.color }"></span>
-            <span>#{{ tg.name }}</span>
-          </button>
+            <button
+              class="px-2 py-0.5 flex items-center gap-1 cursor-pointer"
+              @click="taskStore.activeTag = taskStore.activeTag === tg.name ? null : tg.name"
+              :title="`筛选 #${tg.name}`"
+            >
+              <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: tg.color }"></span>
+              <span>#{{ tg.name }}</span>
+            </button>
+            <button
+              @click.stop="handleDeleteTagFromSidebar(tg.name)"
+              class="hidden group-hover/tag:flex items-center justify-center pr-1.5 text-neutral-500 hover:text-rose-400 transition-colors cursor-pointer"
+              title="从标签库及任务中移除此标签"
+            >
+              <X class="w-2.5 h-2.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
