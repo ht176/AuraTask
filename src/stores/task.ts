@@ -20,6 +20,7 @@ export const useTaskStore = defineStore('task', {
     isPomodoroOpen: false,
     isMiniMode: false,
     isShortcutsOpen: false,
+    isUserGuideOpen: false,
   }),
 
   getters: {

@@ -151,21 +151,21 @@ function handleClose() {
 
       <!-- 属性配置卡片 -->
       <div class="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-xs">
-        <!-- 优先级 -->
+        <!-- 优先级 (四象限联动) -->
         <div>
-          <span class="text-neutral-400 flex items-center gap-1 mb-1">
+          <span class="text-neutral-400 flex items-center gap-1 mb-1" title="优先级与艾森豪威尔四象限一一映射联动">
             <Flag class="w-3 h-3 text-rose-400" />
-            <span>优先级</span>
+            <span>优先级 / 象限</span>
           </span>
           <select
             v-model.number="task.priority"
-            class="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none"
+            class="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none cursor-pointer"
             @change="handleUpdateField({ priority: task.priority, eisenhower_quadrant: task.priority })"
           >
-            <option :value="1" class="bg-neutral-900">P1 紧急且重要</option>
-            <option :value="2" class="bg-neutral-900">P2 重要不紧急</option>
-            <option :value="3" class="bg-neutral-900">P3 紧急不重要</option>
-            <option :value="4" class="bg-neutral-900">P4 不紧急不重要</option>
+            <option :value="1" class="bg-neutral-900">P1 · 紧急且重要 (象限 I)</option>
+            <option :value="2" class="bg-neutral-900">P2 · 重要不紧急 (象限 II)</option>
+            <option :value="3" class="bg-neutral-900">P3 · 紧急不重要 (象限 III)</option>
+            <option :value="4" class="bg-neutral-900">P4 · 不紧不重 (象限 IV)</option>
           </select>
         </div>
 

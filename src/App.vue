@@ -12,6 +12,7 @@ import WindowControls from './components/WindowControls.vue'
 import ServerSettingsModal from './components/ServerSettingsModal.vue'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.vue'
 import UpdateModal from './components/UpdateModal.vue'
+import UserGuideModal from './components/UserGuideModal.vue'
 import { shortcutService } from './services/shortcut'
 import { updaterService } from './services/updater'
 import { useTaskStore } from './stores/task'
@@ -48,8 +49,19 @@ function handleKeyDown(e: KeyboardEvent) {
     return
   }
 
+  // F1 打开操作手册与使用文档
+  if (e.key === 'F1') {
+    e.preventDefault()
+    taskStore.isUserGuideOpen = !taskStore.isUserGuideOpen
+    return
+  }
+
   // Esc 键关闭所有弹窗/抽屉
   if (e.key === 'Escape') {
+    if (taskStore.isUserGuideOpen) {
+      taskStore.isUserGuideOpen = false
+      return
+    }
     if (taskStore.isShortcutsOpen) {
       taskStore.isShortcutsOpen = false
       return
@@ -183,6 +195,9 @@ onUnmounted(() => {
 
       <!-- 自动更新弹窗 -->
       <UpdateModal />
+
+      <!-- 使用手册与操作指南弹窗 -->
+      <UserGuideModal />
     </template>
   </div>
 </template>

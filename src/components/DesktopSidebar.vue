@@ -18,6 +18,7 @@ import {
   Sparkles,
   Server,
   Keyboard,
+  BookOpen,
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
@@ -82,7 +83,6 @@ async function handleFileImport(e: Event) {
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
             AuraTask
-            <span class="text-[10px] px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 font-normal">v1.0</span>
           </h1>
           <p class="text-[11px] text-neutral-400">极简高效待办工作流</p>
         </div>
@@ -317,6 +317,15 @@ async function handleFileImport(e: Event) {
 
         <div class="flex items-center gap-2">
           <button
+            class="flex items-center gap-1 hover:text-emerald-300 transition-colors cursor-pointer"
+            title="查看操作手册与使用文档 (F1)"
+            @click="taskStore.isUserGuideOpen = true"
+          >
+            <BookOpen class="w-3 h-3 text-emerald-400" />
+            <span>文档</span>
+          </button>
+
+          <button
             class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer"
             title="查看全局热键与快捷键 (⌘/)"
             @click="taskStore.isShortcutsOpen = true"
@@ -348,7 +357,7 @@ async function handleFileImport(e: Event) {
 
       <!-- 检查更新与版本信息 -->
       <div class="flex items-center justify-between text-neutral-500 text-[10px] px-1 pt-2 border-t border-white/5">
-        <span class="font-mono">v1.0.3</span>
+        <span class="font-mono">v1.0.4</span>
         <button
           @click="handleCheckUpdate"
           class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer relative"
