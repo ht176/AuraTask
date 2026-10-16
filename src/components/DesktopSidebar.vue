@@ -23,6 +23,7 @@ import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
 import { useServerStore } from '../stores/server'
 import { api } from '../services/api'
+import { updaterService, hasUpdate, isChecking } from '../services/updater'
 import type { ActiveNavView } from '../types/todo'
 
 const taskStore = useTaskStore()
@@ -51,6 +52,10 @@ function handleExportBackup() {
 
 function triggerImport() {
   fileInput.value?.click()
+}
+
+function handleCheckUpdate() {
+  updaterService.checkForUpdates(false)
 }
 
 async function handleFileImport(e: Event) {
@@ -339,6 +344,28 @@ async function handleFileImport(e: Event) {
           </button>
         </div>
         <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport" />
+      </div>
+
+      <!-- 检查更新与版本信息 -->
+      <div class="flex items-center justify-between text-neutral-500 text-[10px] px-1 pt-2 border-t border-white/5">
+        <span class="font-mono">v1.0.3</span>
+        <button
+          @click="handleCheckUpdate"
+          class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer relative"
+          :disabled="isChecking"
+          title="检查客户端最新版本更新"
+        >
+          <Sparkles class="w-3 h-3 text-indigo-400" :class="{ 'animate-spin': isChecking }" />
+          <span>{{ isChecking ? '检测中...' : '检查更新' }}</span>
+          <span
+            v-if="hasUpdate"
+            class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping"
+          ></span>
+          <span
+            v-if="hasUpdate"
+            class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500"
+          ></span>
+        </button>
       </div>
     </div>
   </aside>

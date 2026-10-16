@@ -19,6 +19,7 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
 }
 
 let unlistenTray: (() => void) | null = null
+let unlistenShortcut: (() => void) | null = null
 
 export const shortcutService = {
   getConfig(): ShortcutConfig {
@@ -50,78 +51,26 @@ export const shortcutService = {
     const config = this.getConfig()
     if (!config.enabled) return
 
+    // 1. 监听 Rust 原生系统级全局热键动作 (Windows/macOS/Linux 原生零延迟捕获，即使窗口隐藏在托盘也能秒级唤醒)
     try {
-      const { register, unregisterAll } = await import('@tauri-apps/plugin-global-shortcut')
+      const { listen } = await import('@tauri-apps/api/event')
+      if (unlistenShortcut) unlistenShortcut()
 
-      // 先清空旧的注册
-      await unregisterAll()
-
-      // 1. 全局极速录入待办
-      try {
-        await register(config.quickAdd, async (event) => {
-          if (event.state === 'Pressed') {
-            await showAndFocusWindow()
-            callbacks.onQuickAdd()
-          }
-        })
-      } catch (err) {
-        console.warn(`Failed to register global shortcut ${config.quickAdd}:`, err)
-      }
-
-      // 同时注册 Alt+Space 作为极速录入的备选组合
-      try {
-        await register('Alt+Space', async (event) => {
-          if (event.state === 'Pressed') {
-            await showAndFocusWindow()
-            callbacks.onQuickAdd()
-          }
-        })
-      } catch {
-        // 如果系统已被 Spotlight / Alfred 占用则静默忽略备用键
-      }
-
-      // 2. 全局显示/隐藏窗口
-      try {
-        await register(config.toggleWindow, async (event) => {
-          if (event.state === 'Pressed') {
-            await toggleWindowVisibility()
-            callbacks.onToggleWindow()
-          }
-        })
-      } catch (err) {
-        console.warn(`Failed to register global shortcut ${config.toggleWindow}:`, err)
-      }
-
-      // 3. 全局切换迷你桌面便签
-      try {
-        await register(config.toggleMini, async (event) => {
-          if (event.state === 'Pressed') {
-            await showAndFocusWindow()
-            callbacks.onToggleMini()
-          }
-        })
-      } catch (err) {
-        console.warn(`Failed to register global shortcut ${config.toggleMini}:`, err)
-      }
-
-      // 4. 全局番茄钟
-      try {
-        await register(config.togglePomodoro, async (event) => {
-          if (event.state === 'Pressed') {
-            await showAndFocusWindow()
-            callbacks.onTogglePomodoro()
-          }
-        })
-      } catch (err) {
-        console.warn(`Failed to register global shortcut ${config.togglePomodoro}:`, err)
-      }
-
-      console.log('[AuraTask] Global shortcuts successfully registered.')
+      unlistenShortcut = await listen<string>('shortcut-action', async (event) => {
+        if (event.payload === 'quick_add') {
+          await showAndFocusWindow()
+          callbacks.onQuickAdd()
+        } else if (event.payload === 'toggle_mini') {
+          callbacks.onToggleMini()
+        } else if (event.payload === 'toggle_pomodoro') {
+          callbacks.onTogglePomodoro()
+        }
+      })
     } catch (err) {
-      console.warn('Failed to initialize global shortcuts plugin:', err)
+      console.warn('Failed to listen to native shortcut actions:', err)
     }
 
-    // 监听系统托盘点击动作 (Rust -> Vue)
+    // 2. 监听系统托盘点击动作 (Rust -> Vue)
     try {
       const { listen } = await import('@tauri-apps/api/event')
       if (unlistenTray) unlistenTray()
@@ -131,7 +80,6 @@ export const shortcutService = {
           await showAndFocusWindow()
           callbacks.onQuickAdd()
         } else if (event.payload === 'toggle_mini') {
-          await showAndFocusWindow()
           callbacks.onToggleMini()
         } else if (event.payload === 'show') {
           await showAndFocusWindow()
@@ -140,15 +88,14 @@ export const shortcutService = {
     } catch (err) {
       console.warn('Failed to listen to tray actions:', err)
     }
+
+    console.log('[AuraTask] Native global shortcuts and tray listener successfully registered.')
   },
 
   async unregisterAll(): Promise<void> {
-    if (!isDesktopApp()) return
-    try {
-      const { unregisterAll } = await import('@tauri-apps/plugin-global-shortcut')
-      await unregisterAll()
-    } catch (err) {
-      console.warn('Failed to unregister global shortcuts:', err)
+    if (unlistenShortcut) {
+      unlistenShortcut()
+      unlistenShortcut = null
     }
     if (unlistenTray) {
       unlistenTray()

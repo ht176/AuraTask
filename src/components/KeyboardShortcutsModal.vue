@@ -88,9 +88,9 @@ function handleClose() {
                 <div class="text-[11px] text-neutral-400">任意软件中一键呼出待办录入框</div>
               </div>
               <div class="flex items-center gap-1">
-                <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">Option + Space</kbd>
+                <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">Ctrl / ⌘ + Shift + K</kbd>
                 <span class="text-neutral-500 text-[10px]">或</span>
-                <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">⌘ Shift K</kbd>
+                <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">Alt + Shift + K</kbd>
               </div>
             </div>
 
@@ -99,7 +99,7 @@ function handleClose() {
                 <div class="font-medium text-white">显示 / 隐藏主窗口</div>
                 <div class="text-[11px] text-neutral-400">一键快速置顶或最小化主界面</div>
               </div>
-              <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">⌘ Shift T</kbd>
+              <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">Ctrl / ⌘ + Shift + T</kbd>
             </div>
 
             <div class="py-2 flex items-center justify-between">
@@ -107,7 +107,7 @@ function handleClose() {
                 <div class="font-medium text-white">切换迷你悬浮便签</div>
                 <div class="text-[11px] text-neutral-400">进入/退出桌面置顶小窗便签模式</div>
               </div>
-              <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">⌘ Shift M</kbd>
+              <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">Ctrl / ⌘ + Shift + M</kbd>
             </div>
 
             <div class="py-2 flex items-center justify-between">
@@ -115,7 +115,7 @@ function handleClose() {
                 <div class="font-medium text-white">唤起番茄专注钟</div>
                 <div class="text-[11px] text-neutral-400">随时开启或暂停心流番茄钟</div>
               </div>
-              <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">⌘ Shift P</kbd>
+              <kbd class="px-2 py-1 rounded-md bg-white/10 border border-white/10 text-white font-mono text-[11px]">Ctrl / ⌘ + Shift + P</kbd>
             </div>
           </div>
         </div>

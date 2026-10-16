@@ -11,7 +11,9 @@ import MiniTodoWindow from './components/MiniTodoWindow.vue'
 import WindowControls from './components/WindowControls.vue'
 import ServerSettingsModal from './components/ServerSettingsModal.vue'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.vue'
+import UpdateModal from './components/UpdateModal.vue'
 import { shortcutService } from './services/shortcut'
+import { updaterService } from './services/updater'
 import { useTaskStore } from './stores/task'
 import { usePomodoroStore } from './stores/pomodoro'
 import { useServerStore } from './stores/server'
@@ -100,6 +102,11 @@ onMounted(async () => {
       taskStore.isPomodoroOpen = !taskStore.isPomodoroOpen
     },
   })
+
+  // 应用启动后延迟 3 秒在后台静默检测是否有新版本
+  setTimeout(() => {
+    updaterService.checkForUpdates(true)
+  }, 3000)
 })
 
 onUnmounted(() => {
@@ -173,6 +180,9 @@ onUnmounted(() => {
 
       <!-- 键盘快捷键与全局热键速查弹窗 -->
       <KeyboardShortcutsModal />
+
+      <!-- 自动更新弹窗 -->
+      <UpdateModal />
     </template>
   </div>
 </template>
