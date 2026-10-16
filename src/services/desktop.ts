@@ -96,3 +96,35 @@ export async function exitMiniMode() {
     console.warn('Failed to exit mini mode', err)
   }
 }
+
+export async function showAndFocusWindow() {
+  if (!isDesktopApp()) return
+  try {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    const win = getCurrentWindow()
+    await win.unminimize()
+    await win.show()
+    await win.setFocus()
+  } catch (err) {
+    console.warn('Failed to show and focus window', err)
+  }
+}
+
+export async function toggleWindowVisibility() {
+  if (!isDesktopApp()) return
+  try {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    const win = getCurrentWindow()
+    const isVisible = await win.isVisible()
+    if (isVisible) {
+      await win.hide()
+    } else {
+      await win.unminimize()
+      await win.show()
+      await win.setFocus()
+    }
+  } catch (err) {
+    console.warn('Failed to toggle window visibility', err)
+  }
+}
+

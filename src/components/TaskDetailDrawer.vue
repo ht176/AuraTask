@@ -78,6 +78,21 @@ function handleRemoveTag(tagToRemove: string) {
   handleUpdateField({ tags: updatedTags })
 }
 
+function setQuickDate(offsetDays: number | null) {
+  if (!task.value) return
+  if (offsetDays === null) {
+    task.value.due_date = null
+  } else {
+    const d = new Date()
+    d.setDate(d.getDate() + offsetDays)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    task.value.due_date = `${y}-${m}-${day}`
+  }
+  handleUpdateField({ due_date: task.value.due_date })
+}
+
 function handleClose() {
   taskStore.selectedTaskId = null
 }
@@ -178,17 +193,30 @@ function handleClose() {
 
         <!-- 截止日期 -->
         <div>
-          <span class="text-neutral-400 flex items-center gap-1 mb-1">
-            <Calendar class="w-3 h-3 text-amber-400" />
-            <span>截止日期</span>
-          </span>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-neutral-400 flex items-center gap-1">
+              <Calendar class="w-3 h-3 text-amber-400" />
+              <span>截止日期</span>
+            </span>
+            <span
+              v-if="task.due_date"
+              class="text-[10px] text-neutral-500 hover:text-rose-400 cursor-pointer"
+              @click="setQuickDate(null)"
+            >
+              清除
+            </span>
+          </div>
           <input
             v-model="task.due_date"
-            type="text"
-            placeholder="YYYY-MM-DD"
+            type="date"
             class="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white font-mono focus:outline-none"
-            @blur="handleUpdateField({ due_date: task.due_date })"
+            @change="handleUpdateField({ due_date: task.due_date })"
           />
+          <div class="flex items-center gap-1 mt-1 text-[10px]">
+            <button class="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-neutral-300 cursor-pointer transition-colors" @click="setQuickDate(0)">今天</button>
+            <button class="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-neutral-300 cursor-pointer transition-colors" @click="setQuickDate(1)">明天</button>
+            <button class="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-neutral-300 cursor-pointer transition-colors" @click="setQuickDate(3)">3天后</button>
+          </div>
         </div>
 
         <!-- 预估番茄数 -->

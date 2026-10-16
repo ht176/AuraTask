@@ -10,6 +10,7 @@ import {
   Flag,
   Tag,
   CheckCircle,
+  Trash2,
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { parseNaturalLanguage } from '../services/nlp'
@@ -65,6 +66,12 @@ async function handleQuickAdd() {
 
   await taskStore.createTaskFromNLP(quickInputText.value, currentCategory)
   quickInputText.value = ''
+}
+
+async function handleClearCompleted() {
+  if (confirm(`确定要清空这 ${completedTasks.value.length} 项已完成的任务吗？`)) {
+    await taskStore.clearCompletedTasks()
+  }
 }
 </script>
 
@@ -168,14 +175,24 @@ async function handleQuickAdd() {
 
         <!-- 已完成任务折叠区域 -->
         <div v-if="completedTasks.length > 0" class="pt-4">
-          <button
-            class="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 hover:text-neutral-200 transition-colors py-1 cursor-pointer"
-            @click="isShowCompleted = !isShowCompleted"
-          >
-            <ChevronDown v-if="isShowCompleted" class="w-3.5 h-3.5" />
-            <ChevronRight v-else class="w-3.5 h-3.5" />
-            <span>已完成 ({{ completedTasks.length }})</span>
-          </button>
+          <div class="flex items-center justify-between pb-1">
+            <button
+              class="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 hover:text-neutral-200 transition-colors py-1 cursor-pointer"
+              @click="isShowCompleted = !isShowCompleted"
+            >
+              <ChevronDown v-if="isShowCompleted" class="w-3.5 h-3.5" />
+              <ChevronRight v-else class="w-3.5 h-3.5" />
+              <span>已完成 ({{ completedTasks.length }})</span>
+            </button>
+            <button
+              class="text-[11px] text-neutral-500 hover:text-rose-400 transition-colors flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded hover:bg-rose-500/10"
+              title="一键清空所有已完成任务"
+              @click="handleClearCompleted"
+            >
+              <Trash2 class="w-3 h-3" />
+              <span>清空已办</span>
+            </button>
+          </div>
 
           <div v-if="isShowCompleted" class="space-y-2 mt-2">
             <TaskItem

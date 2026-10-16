@@ -10,6 +10,8 @@ import PomodoroModal from './components/PomodoroModal.vue'
 import MiniTodoWindow from './components/MiniTodoWindow.vue'
 import WindowControls from './components/WindowControls.vue'
 import ServerSettingsModal from './components/ServerSettingsModal.vue'
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.vue'
+import { shortcutService } from './services/shortcut'
 import { useTaskStore } from './stores/task'
 import { usePomodoroStore } from './stores/pomodoro'
 import { useServerStore } from './stores/server'
@@ -37,14 +39,29 @@ function handleKeyDown(e: KeyboardEvent) {
     return
   }
 
+  // Cmd / Ctrl + / 唤起快捷键速查面板
+  if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.key === '?')) {
+    e.preventDefault()
+    taskStore.isShortcutsOpen = !taskStore.isShortcutsOpen
+    return
+  }
+
   // Esc 键关闭所有弹窗/抽屉
   if (e.key === 'Escape') {
+    if (taskStore.isShortcutsOpen) {
+      taskStore.isShortcutsOpen = false
+      return
+    }
     if (taskStore.isQuickAddOpen) {
       taskStore.isQuickAddOpen = false
       return
     }
     if (taskStore.isPomodoroOpen) {
       taskStore.isPomodoroOpen = false
+      return
+    }
+    if (serverStore.isSettingsOpen) {
+      serverStore.isSettingsOpen = false
       return
     }
     if (taskStore.selectedTaskId) {
@@ -65,14 +82,29 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   serverStore.loadConfig()
   taskStore.init()
   window.addEventListener('keydown', handleKeyDown)
+
+  // 注册全局系统热键与系统托盘菜单动作响应
+  await shortcutService.registerAll({
+    onQuickAdd: () => {
+      taskStore.isQuickAddOpen = true
+    },
+    onToggleWindow: () => {},
+    onToggleMini: () => {
+      taskStore.toggleMiniMode()
+    },
+    onTogglePomodoro: () => {
+      taskStore.isPomodoroOpen = !taskStore.isPomodoroOpen
+    },
+  })
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  shortcutService.unregisterAll()
 })
 </script>
 
@@ -138,6 +170,9 @@ onUnmounted(() => {
 
       <!-- NAS 后台服务配置弹窗 -->
       <ServerSettingsModal />
+
+      <!-- 键盘快捷键与全局热键速查弹窗 -->
+      <KeyboardShortcutsModal />
     </template>
   </div>
 </template>

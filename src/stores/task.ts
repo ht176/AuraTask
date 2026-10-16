@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti'
 import { api } from '../services/api'
 import { sound } from '../services/audio'
 import { parseNaturalLanguage } from '../services/nlp'
+import { isDesktopApp, enterMiniMode, exitMiniMode } from '../services/desktop'
 import type { Task, Category, ActiveNavView, StatsData, KanbanStatus, EisenhowerQuadrant } from '../types/todo'
 
 export const useTaskStore = defineStore('task', {
@@ -18,6 +19,7 @@ export const useTaskStore = defineStore('task', {
     isQuickAddOpen: false,
     isPomodoroOpen: false,
     isMiniMode: false,
+    isShortcutsOpen: false,
   }),
 
   getters: {
@@ -282,6 +284,25 @@ export const useTaskStore = defineStore('task', {
       } catch (err) {
         console.error('Failed to delete category', err)
       }
+    },
+
+    async toggleMiniMode() {
+      this.isMiniMode = !this.isMiniMode
+      if (isDesktopApp()) {
+        if (this.isMiniMode) {
+          await enterMiniMode()
+        } else {
+          await exitMiniMode()
+        }
+      }
+    },
+
+    async clearCompletedTasks() {
+      const completed = this.tasks.filter(t => t.completed)
+      for (const t of completed) {
+        await api.deleteTask(t.id)
+      }
+      this.tasks = this.tasks.filter(t => !t.completed)
     }
   }
 })

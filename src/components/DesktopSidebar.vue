@@ -17,6 +17,7 @@ import {
   Upload,
   Sparkles,
   Server,
+  Keyboard,
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
@@ -309,7 +310,16 @@ async function handleFileImport(e: Event) {
           </span>
         </button>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2">
+          <button
+            class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer"
+            title="查看全局热键与快捷键 (⌘/)"
+            @click="taskStore.isShortcutsOpen = true"
+          >
+            <Keyboard class="w-3 h-3 text-indigo-400" />
+            <span>热键</span>
+          </button>
+
           <button
             class="flex items-center gap-1 hover:text-neutral-200 transition-colors cursor-pointer"
             title="导出备份 JSON"
