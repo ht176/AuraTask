@@ -24,8 +24,10 @@ pub fn run() {
                             if event.state == ShortcutState::Pressed {
                                 use tauri::Emitter;
 
-                                // 快捷录入: Ctrl+Shift+K (Win/Linux) 或 Cmd+Shift+K (Mac) 或 Alt+Shift+K
-                                if shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyK)
+                                // 快捷录入: Ctrl+Alt+K (Win/Linux) 或 Cmd+Alt+K (Mac) 或兼容旧键位
+                                if shortcut.matches(Modifiers::CONTROL | Modifiers::ALT, Code::KeyK)
+                                    || shortcut.matches(Modifiers::SUPER | Modifiers::ALT, Code::KeyK)
+                                    || shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyK)
                                     || shortcut.matches(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyK)
                                     || shortcut.matches(Modifiers::ALT | Modifiers::SHIFT, Code::KeyK)
                                 {
@@ -36,8 +38,10 @@ pub fn run() {
                                     }
                                     let _ = app.emit("shortcut-action", "quick_add");
                                 }
-                                // 唤起/隐藏主窗口: Ctrl+Shift+T / Cmd+Shift+T
-                                else if shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyT)
+                                // 唤起/隐藏主窗口: Ctrl+Alt+T / Cmd+Alt+T
+                                else if shortcut.matches(Modifiers::CONTROL | Modifiers::ALT, Code::KeyT)
+                                    || shortcut.matches(Modifiers::SUPER | Modifiers::ALT, Code::KeyT)
+                                    || shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyT)
                                     || shortcut.matches(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyT)
                                 {
                                     if let Some(window) = app.get_webview_window("main") {
@@ -50,8 +54,10 @@ pub fn run() {
                                         }
                                     }
                                 }
-                                // 切换迷你便签: Ctrl+Shift+M / Cmd+Shift+M
-                                else if shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyM)
+                                // 切换迷你便签: Ctrl+Alt+M / Cmd+Alt+M
+                                else if shortcut.matches(Modifiers::CONTROL | Modifiers::ALT, Code::KeyM)
+                                    || shortcut.matches(Modifiers::SUPER | Modifiers::ALT, Code::KeyM)
+                                    || shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyM)
                                     || shortcut.matches(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyM)
                                 {
                                     if let Some(window) = app.get_webview_window("main") {
@@ -61,8 +67,10 @@ pub fn run() {
                                     }
                                     let _ = app.emit("shortcut-action", "toggle_mini");
                                 }
-                                // 番茄钟: Ctrl+Shift+P / Cmd+Shift+P
-                                else if shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyP)
+                                // 番茄钟: Ctrl+Alt+P / Cmd+Alt+P
+                                else if shortcut.matches(Modifiers::CONTROL | Modifiers::ALT, Code::KeyP)
+                                    || shortcut.matches(Modifiers::SUPER | Modifiers::ALT, Code::KeyP)
+                                    || shortcut.matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::KeyP)
                                     || shortcut.matches(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyP)
                                 {
                                     if let Some(window) = app.get_webview_window("main") {
@@ -77,20 +85,23 @@ pub fn run() {
                         .build(),
                 )?;
 
-                // 注册系统级全局快捷键
+                // 注册系统级默认全局快捷键 (Ctrl+Alt+对应键位)
                 let global_shortcuts = [
-                    "CommandOrControl+Shift+K",
-                    "Alt+Shift+K",
-                    "CommandOrControl+Shift+T",
-                    "CommandOrControl+Shift+M",
-                    "CommandOrControl+Shift+P",
+                    "Control+Alt+K",
+                    "CommandOrControl+Alt+K",
+                    "Control+Alt+T",
+                    "CommandOrControl+Alt+T",
+                    "Control+Alt+M",
+                    "CommandOrControl+Alt+M",
+                    "Control+Alt+P",
+                    "CommandOrControl+Alt+P",
                 ];
                 for s in global_shortcuts {
                     let _ = app.global_shortcut().register(s);
                 }
 
-                let quick_add_i = MenuItem::with_id(app, "quick_add", "新建待办 (Ctrl/Cmd+Shift+K)", true, None::<&str>)?;
-                let mini_i = MenuItem::with_id(app, "toggle_mini", "切换迷你便签模式", true, None::<&str>)?;
+                let quick_add_i = MenuItem::with_id(app, "quick_add", "新建待办 (Ctrl+Alt+K)", true, None::<&str>)?;
+                let mini_i = MenuItem::with_id(app, "toggle_mini", "切换迷你便签 (Ctrl+Alt+M)", true, None::<&str>)?;
                 let show_i = MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
                 let quit_i = MenuItem::with_id(app, "quit", "退出应用", true, None::<&str>)?;
                 let tray_menu = Menu::with_items(app, &[&quick_add_i, &mini_i, &show_i, &quit_i])?;

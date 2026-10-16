@@ -242,10 +242,10 @@ function handleClose() {
           <section v-if="activeTab === 'shortcuts'" class="space-y-4">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <Zap class="w-4 h-4 text-amber-400" />
-              全局热键与置顶便签模式
+              全局热键与自定义按键绑定
             </h3>
             <p class="text-neutral-400">
-              AuraTask 由 Rust 底层原生注册系统全局热键，<strong>即使客户端被最小化或隐藏在托盘，也能被瞬间唤醒并置顶</strong>。
+              AuraTask 默认采用统一的 <strong>Ctrl + Alt + 对应键位</strong> 组合，<strong>即使客户端被最小化或隐藏在托盘，也能被瞬间唤醒并置顶</strong>。所有快捷键均支持前往「设置 -> 快捷键与热键」自由录制修改定制。
             </p>
 
             <div class="space-y-2">
@@ -255,9 +255,7 @@ function handleClose() {
                   <div class="text-[11px] text-neutral-400">任意软件中一键唤出智能 Spotlight 录入框</div>
                 </div>
                 <div class="flex items-center gap-1">
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Shift + K</kbd>
-                  <span class="text-neutral-500 text-[10px]">/</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ Shift K</kbd>
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Alt + K</kbd>
                 </div>
               </div>
 
@@ -267,9 +265,7 @@ function handleClose() {
                   <div class="text-[11px] text-neutral-400">快速唤出主应用或一键收拢到系统托盘</div>
                 </div>
                 <div class="flex items-center gap-1">
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Shift + T</kbd>
-                  <span class="text-neutral-500 text-[10px]">/</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ Shift T</kbd>
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Alt + T</kbd>
                 </div>
               </div>
 
@@ -279,9 +275,7 @@ function handleClose() {
                   <div class="text-[11px] text-neutral-400">在屏幕一角置顶常驻，像便签纸一样实时对照打勾</div>
                 </div>
                 <div class="flex items-center gap-1">
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Shift + M</kbd>
-                  <span class="text-neutral-500 text-[10px]">/</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ Shift M</kbd>
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Alt + M</kbd>
                 </div>
               </div>
 
@@ -291,9 +285,7 @@ function handleClose() {
                   <div class="text-[11px] text-neutral-400">随时开始或暂停 25 分钟专注心流</div>
                 </div>
                 <div class="flex items-center gap-1">
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Shift + P</kbd>
-                  <span class="text-neutral-500 text-[10px]">/</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ Shift P</kbd>
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Alt + P</kbd>
                 </div>
               </div>
 
@@ -303,11 +295,19 @@ function handleClose() {
                   <div class="text-[11px] text-neutral-400">随时呼出本指南或查阅快捷键</div>
                 </div>
                 <div class="flex items-center gap-1">
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Alt + H</kbd>
+                  <span class="text-neutral-500 text-[10px]">/</span>
                   <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">F1</kbd>
-                  <span class="text-neutral-500 text-[10px]">/</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ ?</kbd>
-                  <span class="text-neutral-500 text-[10px]">/</span>
-                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">⌘ H</kbd>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div class="font-medium text-white">打开快捷键速查面板</div>
+                  <div class="text-[11px] text-neutral-400">查看并在线录制修改全部按键绑定</div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <kbd class="px-2 py-1 rounded bg-white/10 font-mono text-white text-xs">Ctrl + Alt + /</kbd>
                 </div>
               </div>
             </div>

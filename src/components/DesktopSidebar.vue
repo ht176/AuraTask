@@ -28,11 +28,17 @@ import { useServerStore } from '../stores/server'
 import { api } from '../services/api'
 import { updaterService, hasUpdate, isChecking } from '../services/updater'
 import { tagService, customTags } from '../services/tags'
+import { shortcutService } from '../services/shortcut'
 import type { ActiveNavView } from '../types/todo'
 
 const taskStore = useTaskStore()
 const pomodoroStore = usePomodoroStore()
 const serverStore = useServerStore()
+
+const quickAddShortcutBadge = computed(() => {
+  const k = shortcutService.getConfig().shortcuts.quickAdd
+  return k || 'Ctrl+Alt+K'
+})
 
 const showAddCategory = ref(false)
 const newCatName = ref('')
@@ -126,7 +132,7 @@ async function handleFileImport(e: Event) {
           <Plus class="w-3.5 h-3.5" />
           <span>新建待办</span>
         </span>
-        <kbd class="px-1.5 py-0.5 rounded text-[10px] bg-black/20 text-indigo-100 font-mono">⌘K</kbd>
+        <kbd class="px-1.5 py-0.5 rounded text-[10px] bg-black/20 text-indigo-100 font-mono">{{ quickAddShortcutBadge }}</kbd>
       </button>
     </div>
 

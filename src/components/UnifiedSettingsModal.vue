@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   Settings,
   Server,
@@ -27,6 +27,7 @@ import {
   Laptop,
   HelpCircle,
   ArrowRight,
+  Command,
 } from 'lucide-vue-next'
 import { useServerStore, type ServerConfig } from '../stores/server'
 import { useTaskStore } from '../stores/task'
@@ -34,6 +35,13 @@ import { themeService, currentTheme, THEME_OPTIONS, type ThemeType } from '../se
 import { tagService, customTags, TAG_COLOR_PALETTE, type CustomTag } from '../services/tags'
 import { updaterService, hasUpdate, isChecking, isDownloading, downloadProgress, updateError, updateInfo } from '../services/updater'
 import { api } from '../services/api'
+import {
+  shortcutService,
+  SHORTCUT_DEFINITIONS,
+  type ShortcutConfig,
+  type ShortcutMap,
+} from '../services/shortcut'
+import { isDesktopApp } from '../services/desktop'
 
 const serverStore = useServerStore()
 const taskStore = useTaskStore()
@@ -69,13 +77,83 @@ const editTagName = ref('')
 const editTagColor = ref(TAG_COLOR_PALETTE[0].color)
 const fileInput = ref<HTMLInputElement | null>(null)
 
+// 快捷键配置与在线录制状态
+const shortcutConfig = ref<ShortcutConfig>(shortcutService.getConfig())
+const isDesktop = ref(isDesktopApp())
+const recordingShortcutId = ref<keyof ShortcutMap | null>(null)
+const recordingShortcutPreview = ref('')
+const shortcutSavedToast = ref(false)
+
+function startRecordingShortcut(id: keyof ShortcutMap) {
+  recordingShortcutId.value = id
+  recordingShortcutPreview.value = '按下组合键...'
+}
+
+function cancelRecordingShortcut() {
+  recordingShortcutId.value = null
+  recordingShortcutPreview.value = ''
+}
+
+function handleResetShortcutDefaults() {
+  shortcutConfig.value = shortcutService.resetToDefaults()
+  recordingShortcutId.value = null
+  recordingShortcutPreview.value = ''
+  showShortcutSaved()
+}
+
+function handleToggleShortcutEnabled() {
+  shortcutConfig.value.enabled = !shortcutConfig.value.enabled
+  shortcutService.saveConfig(shortcutConfig.value)
+  showShortcutSaved()
+}
+
+function showShortcutSaved() {
+  shortcutSavedToast.value = true
+  setTimeout(() => (shortcutSavedToast.value = false), 2000)
+}
+
+function onUnifiedModalKeyDown(e: KeyboardEvent) {
+  if (!recordingShortcutId.value) return
+
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (e.key === 'Escape' && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+    cancelRecordingShortcut()
+    return
+  }
+
+  const res = shortcutService.parseKeyEvent(e)
+  if (!res) return
+
+  if (res.isComplete) {
+    shortcutService.updateShortcutKey(recordingShortcutId.value, res.shortcut)
+    shortcutConfig.value = shortcutService.getConfig()
+    recordingShortcutId.value = null
+    recordingShortcutPreview.value = ''
+    showShortcutSaved()
+  } else {
+    recordingShortcutPreview.value = `${res.shortcut} + ...`
+  }
+}
+
+function formatKeyBadges(shortcutStr: string): string[] {
+  return shortcutStr.split('+').map(k => k.trim())
+}
+
 onMounted(() => {
   serverStore.loadConfig()
   themeService.init()
   tagService.init()
+  window.addEventListener('keydown', onUnifiedModalKeyDown, true)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onUnifiedModalKeyDown, true)
 })
 
 function handleClose() {
+  cancelRecordingShortcut()
   serverStore.isSettingsOpen = false
 }
 
@@ -776,82 +854,132 @@ function handleOpenUserGuide() {
             </div>
           </section>
 
-          <!-- 4. 全局快捷键与热键 -->
+          <!-- 4. 全局快捷键与自定义热键 -->
           <section v-if="activeTab === 'shortcuts'" class="space-y-4">
-            <div>
-              <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Zap class="w-4 h-4 text-amber-500" />
-                全局系统快捷键与应用内热键
-              </h3>
-              <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">即使窗口最小化到系统托盘，也能毫秒级原生唤醒</p>
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Zap class="w-4 h-4 text-amber-500" />
+                  系统全局热键与快捷键配置
+                </h3>
+                <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">默认采用 Ctrl+Alt 组合键，点击任意键位可直接录制修改</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  @click="handleResetShortcutDefaults"
+                  class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer"
+                  title="恢复所有快捷键为系统默认值 (Ctrl+Alt+...)"
+                >
+                  <RotateCcw class="w-3 h-3" />
+                  <span>恢复默认</span>
+                </button>
+                <button
+                  v-if="isDesktop"
+                  class="px-2 py-1 rounded-xl border text-[11px] transition-colors cursor-pointer font-medium"
+                  :class="shortcutConfig.enabled ? 'bg-indigo-600/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 text-neutral-400'"
+                  @click="handleToggleShortcutEnabled"
+                >
+                  {{ shortcutConfig.enabled ? '全局热键开启' : '点击开启全局热键' }}
+                </button>
+              </div>
             </div>
 
-            <div class="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 divide-y divide-black/5 dark:divide-white/5 space-y-2">
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">全局极速录入待办</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">任意软件中呼出 Spotlight 智能录入框</div>
+            <!-- 保存反馈提示 -->
+            <div v-if="shortcutSavedToast" class="p-2 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs text-center animate-in fade-in flex items-center justify-center gap-1.5 font-medium">
+              <Check class="w-3.5 h-3.5" />
+              <span>快捷键绑定已更新并即时生效</span>
+            </div>
+
+            <!-- 自定义键位绑定清单 -->
+            <div class="rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 divide-y divide-black/5 dark:divide-white/5">
+              <div
+                v-for="item in SHORTCUT_DEFINITIONS"
+                :key="item.id"
+                class="p-3 flex items-center justify-between group hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div class="space-y-0.5">
+                  <div class="font-medium text-neutral-900 dark:text-white flex items-center gap-1.5">
+                    <span>{{ item.name }}</span>
+                    <span
+                      v-if="item.isGlobal && isDesktop"
+                      class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 font-mono"
+                    >
+                      全局系统级
+                    </span>
+                    <span
+                      v-else
+                      class="text-[9px] px-1.5 py-0.2 rounded bg-neutral-500/10 text-neutral-500 dark:text-neutral-400 font-mono"
+                    >
+                      应用内
+                    </span>
+                  </div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">{{ item.desc }}</div>
                 </div>
-                <div class="flex items-center gap-1 font-mono text-xs">
-                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + K</kbd>
-                  <span class="text-neutral-400 text-[10px]">或</span>
-                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">Alt + Shift + K</kbd>
+
+                <!-- 快捷键卡片 / 录制中 -->
+                <div class="flex items-center gap-2">
+                  <template v-if="recordingShortcutId === item.id">
+                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500 text-indigo-700 dark:text-indigo-300 animate-pulse font-mono font-medium text-xs">
+                      <span>{{ recordingShortcutPreview || '按下新组合键...' }}</span>
+                    </div>
+                    <button
+                      @click="cancelRecordingShortcut"
+                      class="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer"
+                      title="取消录制 (Esc)"
+                    >
+                      <X class="w-3.5 h-3.5" />
+                    </button>
+                  </template>
+
+                  <template v-else>
+                    <button
+                      @click="startRecordingShortcut(item.id)"
+                      class="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-indigo-500/15 border border-black/10 dark:border-white/10 hover:border-indigo-500/40 text-neutral-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-300 transition-all cursor-pointer font-mono text-xs group/btn shadow-2xs"
+                      title="点击录制自定义快捷键"
+                    >
+                      <span v-for="key in formatKeyBadges(shortcutConfig.shortcuts[item.id])" :key="key" class="font-semibold">
+                        {{ key }}
+                      </span>
+                      <Edit3 class="w-3 h-3 ml-1 text-neutral-400 group-hover/btn:text-indigo-500 transition-colors" />
+                    </button>
+                  </template>
                 </div>
               </div>
+            </div>
 
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">应用内极速录入待办（自动聚焦输入框）</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">列表任意处直接按单键 N 亦可极速录入</div>
-                </div>
-                <div class="flex items-center gap-1 font-mono text-xs">
-                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">⌘ / Ctrl + K</kbd>
-                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">⌘ / Ctrl + N</kbd>
-                  <kbd class="px-1.5 py-1 rounded bg-indigo-50 dark:bg-white/10 text-indigo-600 dark:text-indigo-300 font-semibold">N</kbd>
-                </div>
+            <!-- 通用便捷单键清单 -->
+            <div class="space-y-2 pt-1">
+              <div class="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
+                <Command class="w-3.5 h-3.5 text-emerald-500" />
+                <span>应用内高频单键速查</span>
               </div>
 
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">一键切换主视图</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">1:我的一天 2:收集箱 3:近期 4:四象限 5:看板 6:已完成</div>
+              <div class="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 divide-y divide-black/5 dark:divide-white/5 space-y-2">
+                <div class="pt-1 flex items-center justify-between">
+                  <div>
+                    <div class="font-medium text-neutral-900 dark:text-white">列表任意处直接录入待办</div>
+                    <div class="text-[10px] text-neutral-500">非输入状态直接按单键 N 极速唤起聚焦</div>
+                  </div>
+                  <kbd class="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-indigo-600 dark:text-indigo-300 font-semibold">N</kbd>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">数字键 1 ~ 6</kbd>
-              </div>
-
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">显示 / 隐藏主窗口</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">一键快速置顶或最小化主界面</div>
+                <div class="pt-2 flex items-center justify-between">
+                  <div>
+                    <div class="font-medium text-neutral-900 dark:text-white">一键切换主视图</div>
+                    <div class="text-[10px] text-neutral-500">1:我的一天 2:收集箱 3:近期 4:四象限 5:看板 6:已完成</div>
+                  </div>
+                  <kbd class="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-neutral-800 dark:text-white">数字键 1 ~ 6</kbd>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + T</kbd>
-              </div>
-
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">切换迷你悬浮便签</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">进入/退出桌面置顶小窗便签模式</div>
+                <div class="pt-2 flex items-center justify-between">
+                  <div>
+                    <div class="font-medium text-neutral-900 dark:text-white">随时查阅使用指南</div>
+                    <div class="text-[10px] text-neutral-500">随时调取全功能操作指南与四象限法则</div>
+                  </div>
+                  <kbd class="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-neutral-800 dark:text-white">F1</kbd>
                 </div>
-                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + M</kbd>
-              </div>
-
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">随时唤起番茄钟</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">开启或暂停 25 分钟心流专注</div>
-                </div>
-                <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 font-mono text-xs text-neutral-800 dark:text-white">Ctrl / ⌘ + Shift + P</kbd>
-              </div>
-
-              <div class="pt-2 flex items-center justify-between">
-                <div>
-                  <div class="font-medium text-neutral-900 dark:text-white">打开完整操作手册指南</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">随时随地查阅全部功能操作手册与语法技巧</div>
-                </div>
-                <div class="flex items-center gap-1 font-mono text-xs">
-                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">F1</kbd>
-                  <span class="text-neutral-400 text-[10px]">或</span>
-                  <kbd class="px-2 py-1 rounded bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-white">⌘ / Ctrl + ?</kbd>
+                <div class="pt-2 flex items-center justify-between">
+                  <div class="font-medium text-neutral-900 dark:text-white">快速退出与关闭窗口</div>
+                  <kbd class="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-neutral-800 dark:text-white">Esc</kbd>
                 </div>
               </div>
             </div>

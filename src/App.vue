@@ -31,29 +31,36 @@ function handleKeyDown(e: KeyboardEvent) {
   const target = e.target as HTMLElement
   const isInput = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
 
-  // Cmd / Ctrl + K 或 Cmd / Ctrl + N 唤出极速录入框
-  if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'k' || e.key.toLowerCase() === 'n')) {
+  // 1. 极速录入待办 (默认 Ctrl+Alt+K，支持自定义绑定，兼容 Cmd/Ctrl+K)
+  if (shortcutService.matches(e, 'quickAdd') || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
     e.preventDefault()
     taskStore.isQuickAddOpen = !taskStore.isQuickAddOpen
     return
   }
 
-  // Cmd / Ctrl + Shift + P 唤出番茄钟
-  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
+  // 2. 切换迷你桌面便签 (默认 Ctrl+Alt+M)
+  if (shortcutService.matches(e, 'toggleMini')) {
+    e.preventDefault()
+    taskStore.toggleMiniMode()
+    return
+  }
+
+  // 3. 随时唤起番茄钟 (默认 Ctrl+Alt+P)
+  if (shortcutService.matches(e, 'togglePomodoro') || ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'p')) {
     e.preventDefault()
     taskStore.isPomodoroOpen = !taskStore.isPomodoroOpen
     return
   }
 
-  // 快捷键快速打开操作手册指南: F1, Cmd/Ctrl + ? (Cmd/Ctrl + Shift + /), Cmd/Ctrl + H
-  if (e.key === 'F1' || ((e.metaKey || e.ctrlKey) && (e.key === '?' || (e.shiftKey && e.key === '/') || e.key.toLowerCase() === 'h'))) {
+  // 4. 快捷键快速打开操作手册指南 (默认 Ctrl+Alt+H，同时保留单键 F1)
+  if (e.key === 'F1' || shortcutService.matches(e, 'userGuide')) {
     e.preventDefault()
     taskStore.isUserGuideOpen = !taskStore.isUserGuideOpen
     return
   }
 
-  // Cmd / Ctrl + / 唤起快捷键速查面板
-  if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+  // 5. 唤起快捷键速查面板 (默认 Ctrl+Alt+/，兼容 ⌘/Ctrl+/)
+  if (shortcutService.matches(e, 'shortcutsPanel') || ((e.metaKey || e.ctrlKey) && e.key === '/')) {
     e.preventDefault()
     taskStore.isShortcutsOpen = !taskStore.isShortcutsOpen
     return
