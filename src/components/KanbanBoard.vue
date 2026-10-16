@@ -86,7 +86,7 @@ async function handleQuickAdd(status: KanbanStatus) {
 </script>
 
 <template>
-  <div class="flex-1 h-full flex flex-col overflow-hidden bg-[#0b0d14]/50 select-none p-6">
+  <div class="flex-1 h-full flex flex-col overflow-hidden bg-transparent select-none p-6">
     <div class="flex items-center justify-between pb-4 border-b border-white/5">
       <div>
         <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">

@@ -11,6 +11,7 @@ import {
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
+import { tagService } from '../services/tags'
 import type { Task, PriorityLevel } from '../types/todo'
 
 const props = defineProps<{
@@ -130,12 +131,17 @@ function handleSelect() {
             <span>{{ task.subtask_completed }}/{{ task.subtask_total }}</span>
           </div>
 
-          <!-- 标签小胶囊 -->
+          <!-- 标签小胶囊 (带自定义个性色彩) -->
           <div v-if="task.tags && task.tags.length > 0" class="flex items-center gap-1">
             <span
               v-for="tag in task.tags"
               :key="tag"
-              class="px-1.5 py-0.2 rounded bg-white/5 text-[10px] text-neutral-400"
+              class="px-1.5 py-0.2 rounded-md text-[10px] font-mono border"
+              :style="{
+                color: tagService.getTagInfo(tag).color,
+                backgroundColor: tagService.getTagInfo(tag).bgColor,
+                borderColor: `${tagService.getTagInfo(tag).color}30`
+              }"
             >
               #{{ tag }}
             </span>

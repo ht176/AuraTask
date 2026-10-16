@@ -14,6 +14,7 @@ import {
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { api } from '../services/api'
+import { tagService, customTags } from '../services/tags'
 import type { SubTask, PriorityLevel, KanbanStatus, EisenhowerQuadrant } from '../types/todo'
 
 const taskStore = useTaskStore()
@@ -66,10 +67,21 @@ function handleAddTag() {
   if (!task.value || !newTagInput.value.trim()) return
   const t = newTagInput.value.replace(/^#/, '').trim()
   if (t && !task.value.tags.includes(t)) {
+    tagService.addTag(t)
     const updatedTags = [...task.value.tags, t]
     handleUpdateField({ tags: updatedTags })
   }
   newTagInput.value = ''
+}
+
+function toggleCustomTag(tagName: string) {
+  if (!task.value) return
+  if (task.value.tags.includes(tagName)) {
+    handleRemoveTag(tagName)
+  } else {
+    const updatedTags = [...task.value.tags, tagName]
+    handleUpdateField({ tags: updatedTags })
+  }
 }
 
 function handleRemoveTag(tagToRemove: string) {
@@ -101,7 +113,7 @@ function handleClose() {
 <template>
   <aside
     v-if="taskStore.selectedTaskId && task"
-    class="w-80 sm:w-96 h-full flex flex-col bg-[#0f111a]/95 border-l border-white/5 select-none shrink-0 backdrop-blur-2xl shadow-2xl z-20 animate-in slide-in-from-right duration-200"
+    class="w-80 sm:w-96 h-full flex flex-col theme-sidebar border-l select-none shrink-0 backdrop-blur-2xl shadow-2xl z-20 animate-in slide-in-from-right duration-200"
   >
     <!-- 抽屉头部 -->
     <div class="p-4 border-b border-white/5 flex items-center justify-between">
@@ -323,22 +335,58 @@ function handleClose() {
 
       <!-- 标签体系 -->
       <div class="space-y-2">
-        <label class="block text-[11px] font-semibold text-neutral-400">标签 (Tags)</label>
-        <div class="flex flex-wrap gap-1.5">
+        <div class="flex items-center justify-between text-[11px] font-semibold text-neutral-400">
+          <span>分类标签</span>
+          <span class="text-[10px] text-neutral-500">点击下方快捷标签可快速打标</span>
+        </div>
+
+        <!-- 当前任务已有的标签 -->
+        <div v-if="task.tags && task.tags.length > 0" class="flex flex-wrap gap-1.5">
           <span
             v-for="t in task.tags"
             :key="t"
-            class="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs flex items-center gap-1"
+            class="px-2 py-0.5 rounded-lg text-xs flex items-center gap-1 font-mono border"
+            :style="{
+              color: tagService.getTagInfo(t).color,
+              backgroundColor: tagService.getTagInfo(t).bgColor,
+              borderColor: `${tagService.getTagInfo(t).color}40`
+            }"
           >
             #{{ t }}
-            <button class="hover:text-rose-400 cursor-pointer ml-0.5" @click="handleRemoveTag(t)">×</button>
+            <button class="hover:text-rose-400 cursor-pointer ml-0.5 font-bold" @click="handleRemoveTag(t)">×</button>
           </span>
         </div>
+
+        <!-- 常用自定义标签快速点选条 -->
+        <div v-if="customTags.length > 0" class="pt-1">
+          <div class="text-[10px] text-neutral-500 mb-1">快捷添加自定义标签：</div>
+          <div class="flex flex-wrap gap-1">
+            <button
+              v-for="ct in customTags"
+              :key="ct.id"
+              type="button"
+              class="px-2 py-0.5 rounded-md text-[11px] transition-all cursor-pointer border flex items-center gap-1"
+              :style="{
+                borderColor: task.tags?.includes(ct.name) ? ct.color : 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: task.tags?.includes(ct.name) ? ct.bgColor : 'rgba(255, 255, 255, 0.02)',
+                color: task.tags?.includes(ct.name) ? ct.color : 'inherit',
+                opacity: task.tags?.includes(ct.name) ? 1 : 0.65
+              }"
+              @click="toggleCustomTag(ct.name)"
+            >
+              <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: ct.color }"></span>
+              <span>{{ ct.name }}</span>
+              <Check v-if="task.tags?.includes(ct.name)" class="w-2.5 h-2.5 stroke-[3]" />
+            </button>
+          </div>
+        </div>
+
+        <!-- 手动输入新标签 -->
         <div class="flex items-center gap-1.5 pt-1">
           <input
             v-model="newTagInput"
             type="text"
-            placeholder="添加标签 (回车保存)..."
+            placeholder="输入新标签 (回车快速创建)..."
             class="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
             @keyup.enter="handleAddTag"
           />

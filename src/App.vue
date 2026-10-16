@@ -9,12 +9,14 @@ import QuickAddModal from './components/QuickAddModal.vue'
 import PomodoroModal from './components/PomodoroModal.vue'
 import MiniTodoWindow from './components/MiniTodoWindow.vue'
 import WindowControls from './components/WindowControls.vue'
-import ServerSettingsModal from './components/ServerSettingsModal.vue'
+import UnifiedSettingsModal from './components/UnifiedSettingsModal.vue'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.vue'
 import UpdateModal from './components/UpdateModal.vue'
 import UserGuideModal from './components/UserGuideModal.vue'
 import { shortcutService } from './services/shortcut'
 import { updaterService } from './services/updater'
+import { themeService } from './services/theme'
+import { tagService } from './services/tags'
 import { useTaskStore } from './stores/task'
 import { usePomodoroStore } from './stores/pomodoro'
 import { useServerStore } from './stores/server'
@@ -97,6 +99,8 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  themeService.init()
+  tagService.init()
   serverStore.loadConfig()
   taskStore.init()
   window.addEventListener('keydown', handleKeyDown)
@@ -128,7 +132,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-screen h-screen overflow-hidden bg-[#07080d] text-neutral-100 flex flex-col font-sans select-none">
+  <div class="w-screen h-screen overflow-hidden app-container flex flex-col font-sans select-none">
     <!-- 迷你桌面便签浮窗视图 -->
     <template v-if="taskStore.isMiniMode">
       <MiniTodoWindow />
@@ -139,7 +143,7 @@ onUnmounted(() => {
       <!-- 顶部自定义无边框拖拽栏 -->
       <header
         data-tauri-drag-region
-        class="h-10 px-3 bg-[#0a0c13]/80 border-b border-white/5 flex items-center justify-between select-none shrink-0 backdrop-blur-xl z-30"
+        class="h-10 px-3 theme-header border-b flex items-center justify-between select-none shrink-0 z-30"
       >
         <!-- 左侧窗口拖拽感知区 -->
         <div data-tauri-drag-region class="flex items-center gap-3">
@@ -187,8 +191,8 @@ onUnmounted(() => {
       <!-- 番茄专注钟弹窗 -->
       <PomodoroModal />
 
-      <!-- NAS 后台服务配置弹窗 -->
-      <ServerSettingsModal />
+      <!-- 控制中心与统一偏好设置弹窗 (NAS同步/主题外观/标签库/快捷键/备份) -->
+      <UnifiedSettingsModal />
 
       <!-- 键盘快捷键与全局热键速查弹窗 -->
       <KeyboardShortcutsModal />

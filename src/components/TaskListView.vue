@@ -76,7 +76,7 @@ async function handleClearCompleted() {
 </script>
 
 <template>
-  <div class="flex-1 h-full flex flex-col overflow-hidden bg-[#0b0d14]/50 select-none">
+  <div class="flex-1 h-full flex flex-col overflow-hidden bg-transparent select-none">
     <!-- 头部顶栏：标题、进度与排序 -->
     <header class="px-6 py-4 flex items-center justify-between border-b border-white/5 shrink-0">
       <div>

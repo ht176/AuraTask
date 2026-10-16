@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   Sun,
   Inbox,
@@ -19,12 +19,14 @@ import {
   Server,
   Keyboard,
   BookOpen,
+  Settings,
 } from 'lucide-vue-next'
 import { useTaskStore } from '../stores/task'
 import { usePomodoroStore } from '../stores/pomodoro'
 import { useServerStore } from '../stores/server'
 import { api } from '../services/api'
 import { updaterService, hasUpdate, isChecking } from '../services/updater'
+import { tagService, customTags } from '../services/tags'
 import type { ActiveNavView } from '../types/todo'
 
 const taskStore = useTaskStore()
@@ -59,6 +61,20 @@ function handleCheckUpdate() {
   updaterService.checkForUpdates(false)
 }
 
+const displayTags = computed(() => {
+  const map = new Map<string, { name: string; color: string; bgColor: string }>()
+  customTags.value.forEach(t => {
+    map.set(t.name.toLowerCase(), { name: t.name, color: t.color, bgColor: t.bgColor })
+  })
+  taskStore.allTags.forEach(tagName => {
+    if (!map.has(tagName.toLowerCase())) {
+      const info = tagService.getTagInfo(tagName)
+      map.set(tagName.toLowerCase(), info)
+    }
+  })
+  return Array.from(map.values())
+})
+
 async function handleFileImport(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -75,7 +91,7 @@ async function handleFileImport(e: Event) {
 </script>
 
 <template>
-  <aside class="w-64 h-full flex flex-col bg-[#0f111a]/90 border-r border-white/5 select-none shrink-0 backdrop-blur-xl">
+  <aside class="w-64 h-full flex flex-col theme-sidebar border-r select-none shrink-0 backdrop-blur-xl">
     <!-- 头部品牌 -->
     <div class="p-4 pb-2 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
@@ -253,29 +269,41 @@ async function handleFileImport(e: Event) {
         </div>
       </div>
 
-      <!-- 标签筛选云 -->
-      <div v-if="taskStore.allTags.length > 0" class="space-y-2">
-        <div class="px-3 text-[11px] font-semibold text-neutral-500 tracking-wider uppercase flex items-center gap-1">
-          <Tag class="w-3 h-3" />
-          <span>标签筛选</span>
-        </div>
-        <div class="flex flex-wrap gap-1 px-2.5">
+      <!-- 标签筛选云 (支持自定义标签与色彩) -->
+      <div v-if="displayTags.length > 0" class="space-y-2">
+        <div class="px-3 text-[11px] font-semibold text-neutral-500 tracking-wider uppercase flex items-center justify-between">
+          <div class="flex items-center gap-1">
+            <Tag class="w-3 h-3 text-indigo-400" />
+            <span>分类标签</span>
+          </div>
           <button
-            v-for="tag in taskStore.allTags"
-            :key="tag"
-            class="px-2 py-0.5 rounded-md text-[11px] transition-colors cursor-pointer border"
-            :class="taskStore.activeTag === tag
-              ? 'bg-indigo-500/25 border-indigo-500/40 text-indigo-200'
-              : 'bg-white/5 border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-white/10'"
-            @click="taskStore.activeTag = taskStore.activeTag === tag ? null : tag"
+            @click="serverStore.isSettingsOpen = true"
+            class="p-0.5 text-neutral-500 hover:text-white transition-colors cursor-pointer"
+            title="管理自定义标签"
           >
-            #{{ tag }}
+            <Plus class="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-1.5 px-2.5">
+          <button
+            v-for="tg in displayTags"
+            :key="tg.name"
+            class="px-2 py-0.5 rounded-lg text-[11px] transition-all cursor-pointer border flex items-center gap-1"
+            :style="{
+              borderColor: taskStore.activeTag === tg.name ? tg.color : 'transparent',
+              backgroundColor: taskStore.activeTag === tg.name ? tg.bgColor : 'rgba(255, 255, 255, 0.04)',
+              color: taskStore.activeTag === tg.name ? tg.color : 'inherit'
+            }"
+            @click="taskStore.activeTag = taskStore.activeTag === tg.name ? null : tg.name"
+          >
+            <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: tg.color }"></span>
+            <span>#{{ tg.name }}</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 底部功能区域：番茄钟概览与备份 -->
+    <!-- 底部功能区域：番茄钟概览与极简设置栏 -->
     <div class="p-3 border-t border-white/5 space-y-2.5">
       <!-- 番茄专注卡片 -->
       <div
@@ -298,82 +326,46 @@ async function handleFileImport(e: Event) {
         </span>
       </div>
 
-      <!-- 数据备份与恢复 及 服务器配置 -->
-      <div class="flex items-center justify-between text-neutral-400 text-[11px] px-1 pt-1">
-        <button
-          class="flex items-center gap-1.5 transition-colors cursor-pointer group text-[11px]"
-          :class="serverStore.isStandalone ? 'text-emerald-400/90 hover:text-emerald-300' : 'text-neutral-400 hover:text-white'"
-          :title="serverStore.isStandalone ? '当前处于本地单机模式 (零依赖·无须服务)，点击可配置 NAS 云端同步' : '已连接远程 NAS，点击管理节点'"
-          @click="serverStore.isSettingsOpen = true"
-        >
+      <!-- 极简底部：仅保留版本号状态与设置入口，彻底告别拥挤与换行变形 -->
+      <div class="pt-1 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-1.5">
+          <span class="font-mono text-[11px] text-neutral-400">v1.0.4</span>
+
+          <!-- 状态徽标 -->
           <span
-            class="w-2 h-2 rounded-full transition-all shrink-0"
-            :class="serverStore.isStandalone ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : (serverStore.isConnected ? 'bg-indigo-400 shadow-sm shadow-indigo-400/50' : 'bg-rose-400 animate-pulse')"
-          ></span>
-          <span class="group-hover:text-white transition-colors truncate max-w-[85px]">
-            {{ serverStore.isStandalone ? '单机模式' : (serverStore.activeServer?.name || 'NAS 节点') }}
+            v-if="hasUpdate"
+            class="px-1.5 py-0.5 rounded-md text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1 cursor-pointer"
+            @click="serverStore.isSettingsOpen = true"
+            title="发现新版本，点击打开控制中心更新"
+          >
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+            更新
           </span>
-        </button>
-
-        <div class="flex items-center gap-2">
-          <button
-            class="flex items-center gap-1 hover:text-emerald-300 transition-colors cursor-pointer"
-            title="查看操作手册与使用文档 (F1)"
-            @click="taskStore.isUserGuideOpen = true"
+          <span
+            v-else-if="serverStore.isStandalone"
+            class="px-1.5 py-0.5 rounded-md text-[10px] bg-emerald-500/10 text-emerald-300 flex items-center gap-1"
           >
-            <BookOpen class="w-3 h-3 text-emerald-400" />
-            <span>文档</span>
-          </button>
-
-          <button
-            class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer"
-            title="查看全局热键与快捷键 (⌘/)"
-            @click="taskStore.isShortcutsOpen = true"
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            单机
+          </span>
+          <span
+            v-else
+            class="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-500/10 text-indigo-300 flex items-center gap-1 truncate max-w-[80px]"
+            :title="serverStore.activeServer?.name"
           >
-            <Keyboard class="w-3 h-3 text-indigo-400" />
-            <span>热键</span>
-          </button>
-
-          <button
-            class="flex items-center gap-1 hover:text-neutral-200 transition-colors cursor-pointer"
-            title="导出备份 JSON"
-            @click="handleExportBackup"
-          >
-            <Download class="w-3 h-3" />
-            <span>导出</span>
-          </button>
-
-          <button
-            class="flex items-center gap-1 hover:text-neutral-200 transition-colors cursor-pointer"
-            title="恢复备份 JSON"
-            @click="triggerImport"
-          >
-            <Upload class="w-3 h-3" />
-            <span>恢复</span>
-          </button>
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+            {{ serverStore.activeServer?.name }}
+          </span>
         </div>
-        <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport" />
-      </div>
 
-      <!-- 检查更新与版本信息 -->
-      <div class="flex items-center justify-between text-neutral-500 text-[10px] px-1 pt-2 border-t border-white/5">
-        <span class="font-mono">v1.0.4</span>
+        <!-- 统一设置入口按钮 -->
         <button
-          @click="handleCheckUpdate"
-          class="flex items-center gap-1 hover:text-indigo-300 transition-colors cursor-pointer relative"
-          :disabled="isChecking"
-          title="检查客户端最新版本更新"
+          @click="serverStore.isSettingsOpen = true"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/5 hover:border-white/10 transition-all cursor-pointer text-xs"
+          title="打开控制中心与偏好设置"
         >
-          <Sparkles class="w-3 h-3 text-indigo-400" :class="{ 'animate-spin': isChecking }" />
-          <span>{{ isChecking ? '检测中...' : '检查更新' }}</span>
-          <span
-            v-if="hasUpdate"
-            class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping"
-          ></span>
-          <span
-            v-if="hasUpdate"
-            class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500"
-          ></span>
+          <Settings class="w-3.5 h-3.5 text-indigo-400" />
+          <span>设置</span>
         </button>
       </div>
     </div>
