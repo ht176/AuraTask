@@ -4,7 +4,7 @@
 > 参考与延续 `nas-music-player` 的现代化跨平台全栈架构，专为高效人士打造的极简私有云待办与番茄钟工具。
 > 
 > 📖 **[点击查阅完整操作手册与使用指南 (USER_GUIDE.md)](./USER_GUIDE.md)**  
-> 🚀 **[下载最新全平台客户端发布包 (GitHub Releases)](https://github.com/ht176/nas-todo-list/releases)**
+> 🚀 **[下载最新全平台客户端发布包 (GitHub Releases)](https://github.com/ht176/AuraTask/releases)**
 
 ---
 

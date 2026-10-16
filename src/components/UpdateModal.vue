@@ -34,7 +34,7 @@ function handleRetry() {
 }
 
 function openGitHubReleases() {
-  window.open('https://github.com/ht176/nas-todo-list/releases', '_blank')
+  window.open('https://github.com/ht176/AuraTask/releases', '_blank')
 }
 </script>
 
