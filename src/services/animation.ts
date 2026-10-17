@@ -70,4 +70,22 @@ export const animationService = {
       onComplete,
     })
   },
+
+  /**
+   * 迷你便签桌面闹铃物理抖动动效 (GSAP)
+   * 模拟桌面机械闹钟高频微震感，左右快速微晃动 + 弹性衰减归位
+   */
+  shakeAlarmNote(el: HTMLElement) {
+    if (!el) return
+    gsap.killTweensOf(el)
+    return gsap.timeline()
+      .to(el, { x: -6, rotation: -1.2, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: 6, rotation: 1.2, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: -5, rotation: -0.9, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: 5, rotation: 0.9, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: -3, rotation: -0.5, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: 3, rotation: 0.5, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: -1, rotation: -0.2, duration: 0.05, ease: 'power1.inOut' })
+      .to(el, { x: 0, rotation: 0, duration: 0.07, ease: 'power2.out' })
+  },
 }

@@ -28,9 +28,11 @@ import {
   HelpCircle,
   ArrowRight,
   Command,
+  BellRing,
 } from 'lucide-vue-next'
 import { useServerStore, type ServerConfig } from '../stores/server'
 import { useTaskStore } from '../stores/task'
+import { reminderService } from '../services/reminder'
 import { themeService, currentTheme, THEME_OPTIONS, type ThemeType } from '../services/theme'
 import { tagService, customTags, TAG_COLOR_PALETTE, type CustomTag } from '../services/tags'
 import { updaterService, hasUpdate, isChecking, isDownloading, downloadProgress, updateError, updateInfo } from '../services/updater'
@@ -110,6 +112,13 @@ function handleToggleShortcutEnabled() {
 function showShortcutSaved() {
   shortcutSavedToast.value = true
   setTimeout(() => (shortcutSavedToast.value = false), 2000)
+}
+
+function handleTestAlarm() {
+  handleClose()
+  setTimeout(() => {
+    reminderService.testAlarm()
+  }, 250)
 }
 
 function onUnifiedModalKeyDown(e: KeyboardEvent) {
@@ -867,6 +876,14 @@ function handleOpenUserGuide() {
 
               <div class="flex items-center gap-2">
                 <button
+                  @click="handleTestAlarm"
+                  class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 text-xs transition-colors cursor-pointer font-medium"
+                  title="模拟待办到期，测试桌面便签自动唤醒与闹铃抖动"
+                >
+                  <BellRing class="w-3 h-3 animate-bell-ring" />
+                  <span>测试闹铃抖动</span>
+                </button>
+                <button
                   @click="handleResetShortcutDefaults"
                   class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer"
                   title="恢复所有快捷键为系统默认值 (Ctrl+Alt+...)"
@@ -1045,7 +1062,7 @@ function handleOpenUserGuide() {
               <div class="flex items-center justify-between">
                 <div>
                   <div class="font-bold text-neutral-900 dark:text-white text-sm">AuraTask 客户端</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.4</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.5</div>
                 </div>
 
                 <button

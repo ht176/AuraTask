@@ -70,13 +70,47 @@ export async function enterMiniMode() {
   try {
     const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window')
     const win = getCurrentWindow()
+    await win.unminimize()
+    await win.show()
     await win.setMaximizable(false)
     await win.setResizable(true)
     await win.setMinSize(new LogicalSize(300, 320))
     await win.setSize(new LogicalSize(MINI_WINDOW_WIDTH, MINI_WINDOW_HEIGHT))
     await win.setAlwaysOnTop(true)
+    await win.setFocus()
+    if (typeof window !== 'undefined') {
+      window.focus()
+    }
   } catch (err) {
     console.warn('Failed to enter mini mode', err)
+  }
+}
+
+/**
+ * 待办到期自动唤醒迷你便签小窗 (强置顶、取消最小化、聚焦并请求系统注意)
+ */
+export async function wakeUpMiniWindow() {
+  if (isDesktopApp()) {
+    try {
+      const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window')
+      const win = getCurrentWindow()
+      await win.unminimize()
+      await win.show()
+      await win.setMaximizable(false)
+      await win.setResizable(true)
+      await win.setMinSize(new LogicalSize(300, 320))
+      await win.setSize(new LogicalSize(MINI_WINDOW_WIDTH, MINI_WINDOW_HEIGHT))
+      await win.setAlwaysOnTop(true)
+      await win.setFocus()
+      try {
+        await (win as any).requestUserAttention(2) // 2: Informational / Critical
+      } catch {}
+    } catch (err) {
+      console.warn('Failed to wake up mini window', err)
+    }
+  }
+  if (typeof window !== 'undefined') {
+    window.focus()
   }
 }
 

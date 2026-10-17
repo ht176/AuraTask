@@ -100,6 +100,44 @@ class SoundService {
     }
   }
 
+  // 待办到期时的清脆晶体双音钟鸣闹铃 (Crystal Marimba Alarm Chime)
+  playDueAlarm() {
+    try {
+      const ctx = this.getContext()
+      const now = ctx.currentTime
+
+      // 快速两组轻快的「叮铃~ 叮铃~」上行晶体双和弦 (A5 880Hz -> C#6 1108Hz)
+      const pairs = [
+        { time: now, f1: 880, f2: 1108.73 },
+        { time: now + 0.18, f1: 987.77, f2: 1318.51 },
+        { time: now + 0.55, f1: 880, f2: 1108.73 },
+        { time: now + 0.73, f1: 987.77, f2: 1318.51 },
+      ]
+
+      pairs.forEach(p => {
+        [p.f1, p.f2].forEach((freq, idx) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+
+          osc.type = idx === 0 ? 'sine' : 'triangle'
+          osc.frequency.setValueAtTime(freq, p.time)
+
+          const vol = idx === 0 ? 0.22 : 0.15
+          gain.gain.setValueAtTime(vol, p.time)
+          gain.gain.exponentialRampToValueAtTime(0.0001, p.time + 0.32)
+
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+
+          osc.start(p.time)
+          osc.stop(p.time + 0.35)
+        })
+      })
+    } catch {
+      // 容错静默
+    }
+  }
+
   // 专注白噪音 / 暖棕色心流音
   startAmbientNoise(volume = 0.05) {
     if (this.noiseNode) return

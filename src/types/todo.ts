@@ -32,6 +32,8 @@ export interface Task {
   subtask_completed?: number
 }
 
+export type TodoItem = Task
+
 export interface Category {
   id: string
   name: string

@@ -18,11 +18,14 @@ import { shortcutService } from './services/shortcut'
 import { updaterService } from './services/updater'
 import { themeService } from './services/theme'
 import { tagService } from './services/tags'
+import { reminderService } from './services/reminder'
+import { isDesktopApp } from './services/desktop'
 import { useTaskStore } from './stores/task'
 import { usePomodoroStore } from './stores/pomodoro'
 import { useServerStore } from './stores/server'
 import { Search } from 'lucide-vue-next'
 
+const isDesktop = ref(isDesktopApp())
 const taskStore = useTaskStore()
 const pomodoroStore = usePomodoroStore()
 const serverStore = useServerStore()
@@ -119,6 +122,7 @@ onMounted(async () => {
   tagService.init()
   serverStore.loadConfig()
   taskStore.init()
+  reminderService.init()
   window.addEventListener('keydown', handleKeyDown)
 
   // 注册全局系统热键与系统托盘菜单动作响应
@@ -147,6 +151,7 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
   shortcutService.unregisterAll()
+  reminderService.stopPolling()
 })
 </script>
 
@@ -154,7 +159,12 @@ onUnmounted(() => {
   <div class="w-screen h-screen overflow-hidden app-container flex flex-col font-sans select-none">
     <!-- 迷你桌面便签浮窗视图 -->
     <template v-if="taskStore.isMiniMode">
-      <MiniTodoWindow />
+      <div v-if="!isDesktop" class="w-full h-full flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs">
+        <div class="w-[340px] h-[480px] shadow-2xl relative rounded-2xl overflow-hidden">
+          <MiniTodoWindow />
+        </div>
+      </div>
+      <MiniTodoWindow v-else />
     </template>
 
     <!-- 完整主界面视图 -->

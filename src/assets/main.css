@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --sat: env(safe-area-inset-top, 0px);
@@ -79,17 +80,18 @@ html.theme-light {
   --text-main: #0f172a;
   --text-sub: #475569;
 
-  /* Tailwind 中性色阶映射反转 (使整个应用中 text-neutral-100~500 自动切换为清晰深色) */
-  --color-neutral-50: #020617;
-  --color-neutral-100: #0f172a;
-  --color-neutral-200: #1e293b;
-  --color-neutral-300: #334155;
-  --color-neutral-400: #475569;
+  /* 亮色模式：中性灰度变量遵循标准正向明度梯度 (50为纯净浅灰，950为深邃墨色) */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
   --color-neutral-500: #64748b;
-  --color-neutral-600: #94a3b8;
-  --color-neutral-700: #cbd5e1;
-  --color-neutral-800: #e2e8f0;
-  --color-neutral-900: #f8fafc;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
 }
 
 html.theme-light body {
@@ -206,6 +208,33 @@ html.theme-light :is(span, div, p, kbd, label).text-white {
   color: #0f172a !important;
 }
 
+/* 亮色模式：使深色背景下书写的浅色文本类在白昼主题中拥有清晰深色对比度 */
+html.theme-light .text-neutral-100,
+html.theme-light .text-neutral-200 {
+  color: #0f172a !important;
+}
+html.theme-light .text-neutral-300 {
+  color: #1e293b !important;
+}
+html.theme-light .text-neutral-400 {
+  color: #475569 !important;
+}
+html.theme-light .text-neutral-500 {
+  color: #64748b !important;
+}
+html.theme-light .text-neutral-600 {
+  color: #475569 !important;
+}
+html.theme-light .text-neutral-700 {
+  color: #334155 !important;
+}
+html.theme-light .text-neutral-800 {
+  color: #1e293b !important;
+}
+html.theme-light .text-neutral-900 {
+  color: #0f172a !important;
+}
+
 /* 仅在纯色主行动实体按钮/徽标上保持纯白文字 */
 html.theme-light button.bg-indigo-600,
 html.theme-light button.bg-indigo-500,
@@ -219,30 +248,18 @@ html.theme-light .bg-emerald-600,
 html.theme-light .bg-emerald-500,
 html.theme-light .bg-rose-600,
 html.theme-light .bg-rose-500,
-html.theme-light [class*="bg-gradient-to-"] {
+html.theme-light button[class*="bg-gradient-to-"],
+html.theme-light button[class*="bg-gradient-to-"] *,
+html.theme-light .btn-gradient,
+html.theme-light .btn-gradient * {
   color: #ffffff !important;
 }
-html.theme-light button.bg-indigo-600 *,
-html.theme-light button.bg-indigo-500 *,
-html.theme-light button.bg-emerald-600 *,
-html.theme-light button.bg-emerald-500 *,
-html.theme-light button.bg-rose-600 *,
-html.theme-light button.bg-rose-500 *,
-html.theme-light .bg-indigo-600 *,
-html.theme-light .bg-indigo-500 *,
-html.theme-light .bg-emerald-600 *,
-html.theme-light .bg-emerald-500 *,
-html.theme-light .bg-rose-600 *,
-html.theme-light .bg-rose-500 *,
-html.theme-light [class*="bg-gradient-to-"] * {
-  color: #ffffff;
-}
 
-/* 半透明背景（如 bg-emerald-500/15, bg-indigo-500/15）下的文字在亮色模式下强制深色 */
-html.theme-light [class*="bg-emerald-500/"] :is(span, div, p, label),
-html.theme-light [class*="bg-indigo-500/"] :is(span, div, p, label),
-html.theme-light [class*="bg-amber-500/"] :is(span, div, p, label),
-html.theme-light [class*="bg-rose-500/"] :is(span, div, p, label) {
+/* 半透明背景（如 bg-emerald-500/15, bg-indigo-500/15）下的文字在亮色模式下强制深色 (排除内部实体按钮) */
+html.theme-light [class*="bg-emerald-500/"]:not(button):not([class*="bg-indigo-600"]) :is(span, div, p, label):not(button *),
+html.theme-light [class*="bg-indigo-500/"]:not(button):not([class*="bg-indigo-600"]) :is(span, div, p, label):not(button *),
+html.theme-light [class*="bg-amber-500/"]:not(button) :is(span, div, p, label):not(button *),
+html.theme-light [class*="bg-rose-500/"]:not(button) :is(span, div, p, label):not(button *) {
   color: #0f172a;
 }
 
@@ -448,4 +465,49 @@ html.theme-light ::-webkit-scrollbar-thumb:hover {
 .view-fade-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+/* 闹铃小铃铛高频微晃动 (符合机械钟微摆质感) */
+@keyframes bell-ring {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(18deg);
+  }
+  30% {
+    transform: rotate(-18deg);
+  }
+  45% {
+    transform: rotate(14deg);
+  }
+  60% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+  85% {
+    transform: rotate(-4deg);
+  }
+}
+
+.animate-bell-ring {
+  display: inline-block;
+  transform-origin: top center;
+  animation: bell-ring 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+}
+
+/* 闹铃到期激活时迷你便签窗体微光呼吸警示 */
+@keyframes alarm-pulse-border {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.4), 0 8px 30px -4px rgba(244, 63, 94, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.8), 0 12px 36px -2px rgba(244, 63, 94, 0.45);
+  }
+}
+
+.alarm-glow {
+  animation: alarm-pulse-border 1.5s ease-in-out infinite;
 }
