@@ -237,6 +237,23 @@ export const api = {
     }
   },
 
+  async getAllSubtasks(): Promise<SubTask[]> {
+    const { isStandalone, baseUrl } = getServerContext()
+    if (isStandalone || !baseUrl) {
+      return localDb.getAllSubtasks()
+    }
+
+    try {
+      const headers = getRequestHeaders()
+      const res = await fetch(`${baseUrl}/api/subtasks`, { headers })
+      const data = await res.json()
+      if (data.success) return data.data
+    } catch (err) {
+      console.warn('Remote getAllSubtasks failed, falling back to localDb:', err)
+    }
+    return localDb.getAllSubtasks()
+  },
+
   async getSubtasks(taskId: string): Promise<SubTask[]> {
     const { isStandalone, baseUrl } = getServerContext()
     if (isStandalone || !baseUrl) {
@@ -254,10 +271,10 @@ export const api = {
     return localDb.getSubtasks(taskId)
   },
 
-  async createSubtask(taskId: string, title: string): Promise<SubTask> {
+  async createSubtask(taskId: string, title: string, due_date?: string | null): Promise<SubTask> {
     const { isStandalone, baseUrl } = getServerContext()
     if (isStandalone || !baseUrl) {
-      return localDb.createSubtask(taskId, title)
+      return localDb.createSubtask(taskId, title, due_date)
     }
 
     try {
@@ -265,21 +282,21 @@ export const api = {
       const res = await fetch(`${baseUrl}/api/tasks/${taskId}/subtasks`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title, due_date }),
       })
       const data = await res.json()
       if (data.success) {
-        localDb.createSubtask(taskId, title)
+        localDb.createSubtask(taskId, title, due_date)
         return data.data
       }
       throw new Error(data.error)
     } catch (err) {
       console.warn('Remote createSubtask failed, falling back to localDb:', err)
-      return localDb.createSubtask(taskId, title)
+      return localDb.createSubtask(taskId, title, due_date)
     }
   },
 
-  async updateSubtask(id: string, payload: { title?: string; completed?: boolean }): Promise<SubTask> {
+  async updateSubtask(id: string, payload: { title?: string; completed?: boolean; due_date?: string | null }): Promise<SubTask> {
     const { isStandalone, baseUrl } = getServerContext()
     if (isStandalone || !baseUrl) {
       return localDb.updateSubtask(id, payload)

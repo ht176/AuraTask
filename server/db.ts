@@ -54,6 +54,7 @@ export function initDatabase() {
       completed INTEGER DEFAULT 0,
       sort_order INTEGER DEFAULT 0,
       created_at TEXT NOT NULL,
+      due_date TEXT,
       FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
     );
 
@@ -71,6 +72,11 @@ export function initDatabase() {
       value TEXT NOT NULL
     );
   `)
+
+  // 迁移历史数据库字段
+  try {
+    db.exec('ALTER TABLE subtasks ADD COLUMN due_date TEXT')
+  } catch {}
 
   // 初始化默认清单分类
   const catCount = db.prepare('SELECT COUNT(*) as count FROM categories').get() as { count: number }

@@ -21,6 +21,10 @@ const taskStore = useTaskStore()
 const subtasks = ref<SubTask[]>([])
 const newSubtaskTitle = ref('')
 const newTagInput = ref('')
+const showNewSubDueDate = ref(false)
+const newSubtaskDueDate = ref('')
+const editingSubtaskDueDateId = ref<string | null>(null)
+const subtaskDueDateInput = ref('')
 
 const task = ref(taskStore.selectedTask)
 
@@ -44,9 +48,12 @@ async function handleUpdateField(fields: Record<string, any>) {
 
 async function handleAddSubtask() {
   if (!task.value || !newSubtaskTitle.value.trim()) return
-  const sub = await api.createSubtask(task.value.id, newSubtaskTitle.value.trim())
+  const formattedDueDate = newSubtaskDueDate.value ? newSubtaskDueDate.value.replace('T', ' ') : null
+  const sub = await api.createSubtask(task.value.id, newSubtaskTitle.value.trim(), formattedDueDate)
   subtasks.value.push(sub)
   newSubtaskTitle.value = ''
+  newSubtaskDueDate.value = ''
+  showNewSubDueDate.value = false
   taskStore.fetchTasks()
 }
 
@@ -54,6 +61,25 @@ async function handleToggleSubtask(sub: SubTask) {
   const nextCompleted = !sub.completed
   sub.completed = nextCompleted
   await api.updateSubtask(sub.id, { completed: nextCompleted })
+  taskStore.fetchTasks()
+}
+
+function openSubtaskDuePicker(sub: SubTask) {
+  editingSubtaskDueDateId.value = sub.id
+  subtaskDueDateInput.value = sub.due_date ? sub.due_date.replace(' ', 'T') : ''
+}
+
+async function handleSaveSubDueDate(sub: SubTask) {
+  const formatted = subtaskDueDateInput.value ? subtaskDueDateInput.value.replace('T', ' ') : null
+  sub.due_date = formatted
+  await api.updateSubtask(sub.id, { due_date: formatted })
+  editingSubtaskDueDateId.value = null
+  taskStore.fetchTasks()
+}
+
+async function handleClearSubDueDate(sub: SubTask) {
+  sub.due_date = null
+  await api.updateSubtask(sub.id, { due_date: null })
   taskStore.fetchTasks()
 }
 
@@ -288,48 +314,136 @@ function handleClose() {
         </div>
 
         <!-- 子任务项列表 -->
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <div
             v-for="sub in subtasks"
             :key="sub.id"
-            class="group flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 text-xs"
+            class="group flex items-start justify-between p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-white/10 text-xs transition-colors gap-2"
           >
-            <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="flex items-start gap-2.5 flex-1 min-w-0">
               <button
-                class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 cursor-pointer"
+                class="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 cursor-pointer mt-0.5"
                 :class="sub.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-neutral-500 hover:border-indigo-400'"
                 @click="handleToggleSubtask(sub)"
               >
                 <Check v-if="sub.completed" class="w-3 h-3" />
               </button>
-              <span class="truncate" :class="{ 'line-through text-neutral-500': sub.completed }">
-                {{ sub.title }}
-              </span>
+
+              <div class="flex-1 min-w-0">
+                <!-- 步骤标题：彻底解决过长看不全的问题，支持自动换行与自由阅读 -->
+                <div
+                  class="break-words whitespace-normal text-xs text-neutral-200 leading-relaxed select-text"
+                  :class="{ 'line-through text-neutral-500': sub.completed }"
+                  :title="sub.title"
+                >
+                  {{ sub.title }}
+                </div>
+
+                <!-- 步骤截止时间与提醒标签 -->
+                <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <div v-if="editingSubtaskDueDateId === sub.id" class="flex items-center gap-1">
+                    <input
+                      type="datetime-local"
+                      v-model="subtaskDueDateInput"
+                      class="bg-black/40 border border-indigo-500/50 rounded-lg px-2 py-0.5 text-[10px] text-white focus:outline-none"
+                    />
+                    <button
+                      @click="handleSaveSubDueDate(sub)"
+                      class="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] text-white cursor-pointer font-medium"
+                    >
+                      保存
+                    </button>
+                    <button
+                      @click="editingSubtaskDueDateId = null"
+                      class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-neutral-300 cursor-pointer"
+                    >
+                      取消
+                    </button>
+                  </div>
+                  <template v-else>
+                    <span
+                      v-if="sub.due_date"
+                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 cursor-pointer hover:bg-amber-500/25 transition-colors"
+                      title="点击修改步骤截止时间与提醒"
+                      @click="openSubtaskDuePicker(sub)"
+                    >
+                      <Calendar class="w-2.5 h-2.5" />
+                      <span>{{ sub.due_date }}</span>
+                      <button
+                        class="hover:text-rose-400 ml-0.5 font-bold cursor-pointer"
+                        title="清除截止时间"
+                        @click.stop="handleClearSubDueDate(sub)"
+                      >
+                        ×
+                      </button>
+                    </span>
+                    <button
+                      v-else
+                      class="inline-flex items-center gap-1 text-[10px] text-neutral-500 hover:text-indigo-400 transition-colors cursor-pointer opacity-70 group-hover:opacity-100"
+                      title="设置步骤截止时间与闹铃提醒"
+                      @click="openSubtaskDuePicker(sub)"
+                    >
+                      <Calendar class="w-2.5 h-2.5" />
+                      <span>设置截止提醒</span>
+                    </button>
+                  </template>
+                </div>
+              </div>
             </div>
+
             <button
-              class="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 transition-opacity cursor-pointer"
+              class="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 transition-opacity cursor-pointer shrink-0 mt-0.5"
               @click="handleDeleteSubtask(sub.id)"
+              title="删除子步骤"
             >
-              <Trash2 class="w-3 h-3" />
+              <Trash2 class="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         <!-- 添加子任务输入框 -->
-        <div class="flex items-center gap-1.5 pt-1">
-          <input
-            v-model="newSubtaskTitle"
-            type="text"
-            placeholder="添加子任务步骤..."
-            class="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            @keyup.enter="handleAddSubtask"
-          />
-          <button
-            class="p-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-200 cursor-pointer transition-colors"
-            @click="handleAddSubtask"
-          >
-            <Plus class="w-3.5 h-3.5" />
-          </button>
+        <div class="flex flex-col gap-1.5 pt-1">
+          <div class="flex items-center gap-1.5">
+            <input
+              v-model="newSubtaskTitle"
+              type="text"
+              placeholder="添加子任务步骤..."
+              class="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+              @keyup.enter="handleAddSubtask"
+            />
+            <button
+              class="p-1.5 rounded-xl border border-white/10 hover:border-indigo-500 text-neutral-400 hover:text-indigo-400 cursor-pointer transition-colors"
+              :class="{ 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300': showNewSubDueDate }"
+              title="设置新步骤截止提醒"
+              @click="showNewSubDueDate = !showNewSubDueDate"
+            >
+              <Calendar class="w-3.5 h-3.5" />
+            </button>
+            <button
+              class="p-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-200 cursor-pointer transition-colors"
+              @click="handleAddSubtask"
+              title="确认添加步骤"
+            >
+              <Plus class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <!-- 新建步骤截止时间快速选框 -->
+          <div v-if="showNewSubDueDate" class="flex items-center gap-2 px-1 text-[11px] text-neutral-400 animate-in fade-in">
+            <span>步骤截止：</span>
+            <input
+              type="datetime-local"
+              v-model="newSubtaskDueDate"
+              class="bg-white/5 border border-white/10 rounded-lg px-2 py-0.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            />
+            <button
+              v-if="newSubtaskDueDate"
+              class="text-[10px] text-neutral-400 hover:text-rose-400 cursor-pointer"
+              @click="newSubtaskDueDate = ''"
+            >
+              清除
+            </button>
+          </div>
         </div>
       </div>
 

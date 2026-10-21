@@ -268,6 +268,18 @@ app.post('/api/tasks/batch-update', (req, res) => {
 
 // --- Subtasks API ---
 
+app.get('/api/subtasks', (_req, res) => {
+  try {
+    const subtasks = db.prepare('SELECT * FROM subtasks ORDER BY sort_order ASC, created_at ASC').all() as any[]
+    res.json({
+      success: true,
+      data: subtasks.map(s => ({ ...s, completed: Boolean(s.completed) }))
+    })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 app.get('/api/tasks/:id/subtasks', (req, res) => {
   try {
     const { id } = req.params
@@ -284,18 +296,19 @@ app.get('/api/tasks/:id/subtasks', (req, res) => {
 app.post('/api/tasks/:id/subtasks', (req, res) => {
   try {
     const { id } = req.params
-    const { title } = req.body
+    const { title, due_date } = req.body
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, error: 'Subtask title required' })
     }
 
     const subId = 'sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
     const now = new Date().toISOString()
+    const finalDueDate = due_date || null
 
-    db.prepare('INSERT INTO subtasks (id, task_id, title, completed, sort_order, created_at) VALUES (?, ?, ?, 0, 0, ?)')
-      .run(subId, id, title.trim(), now)
+    db.prepare('INSERT INTO subtasks (id, task_id, title, completed, sort_order, created_at, due_date) VALUES (?, ?, ?, 0, 0, ?, ?)')
+      .run(subId, id, title.trim(), now, finalDueDate)
 
-    res.json({ success: true, data: { id: subId, task_id: id, title: title.trim(), completed: false, created_at: now } })
+    res.json({ success: true, data: { id: subId, task_id: id, title: title.trim(), completed: false, created_at: now, due_date: finalDueDate } })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
   }
@@ -304,15 +317,16 @@ app.post('/api/tasks/:id/subtasks', (req, res) => {
 app.put('/api/subtasks/:id', (req, res) => {
   try {
     const { id } = req.params
-    const { title, completed } = req.body
+    const { title, completed, due_date } = req.body
     const current = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(id) as any
     if (!current) return res.status(404).json({ success: false, error: 'Subtask not found' })
 
     const newTitle = title !== undefined ? title.trim() : current.title
     const newCompleted = completed !== undefined ? (completed ? 1 : 0) : current.completed
+    const newDueDate = due_date !== undefined ? (due_date || null) : current.due_date
 
-    db.prepare('UPDATE subtasks SET title = ?, completed = ? WHERE id = ?').run(newTitle, newCompleted, id)
-    res.json({ success: true, data: { ...current, title: newTitle, completed: Boolean(newCompleted) } })
+    db.prepare('UPDATE subtasks SET title = ?, completed = ?, due_date = ? WHERE id = ?').run(newTitle, newCompleted, newDueDate, id)
+    res.json({ success: true, data: { ...current, title: newTitle, completed: Boolean(newCompleted), due_date: newDueDate } })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
   }
@@ -508,9 +522,9 @@ app.post('/api/backup/import', (req, res) => {
       }
 
       if (Array.isArray(subtasks)) {
-        const subStmt = db.prepare('INSERT OR REPLACE INTO subtasks (id, task_id, title, completed, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        const subStmt = db.prepare('INSERT OR REPLACE INTO subtasks (id, task_id, title, completed, sort_order, created_at, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)')
         for (const s of subtasks) {
-          subStmt.run(s.id, s.task_id, s.title, s.completed ? 1 : 0, s.sort_order || 0, s.created_at || new Date().toISOString())
+          subStmt.run(s.id, s.task_id, s.title, s.completed ? 1 : 0, s.sort_order || 0, s.created_at || new Date().toISOString(), s.due_date || null)
         }
       }
     })

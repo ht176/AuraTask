@@ -160,7 +160,7 @@ onUnmounted(() => {
     <!-- 迷你桌面便签浮窗视图 -->
     <template v-if="taskStore.isMiniMode">
       <div v-if="!isDesktop" class="w-full h-full flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs">
-        <div class="w-[340px] h-[480px] shadow-2xl relative rounded-2xl overflow-hidden">
+        <div class="w-[250px] h-[320px] shadow-2xl relative rounded-2xl overflow-hidden">
           <MiniTodoWindow />
         </div>
       </div>

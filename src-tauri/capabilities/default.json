@@ -26,6 +26,7 @@
     "core:window:allow-center",
     "process:default",
     "updater:default",
+    "autostart:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-register-all",

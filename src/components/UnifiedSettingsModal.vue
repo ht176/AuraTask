@@ -43,7 +43,7 @@ import {
   type ShortcutConfig,
   type ShortcutMap,
 } from '../services/shortcut'
-import { isDesktopApp } from '../services/desktop'
+import { isDesktopApp, isAutostartEnabled, setAutostartEnabled } from '../services/desktop'
 
 const serverStore = useServerStore()
 const taskStore = useTaskStore()
@@ -82,9 +82,21 @@ const fileInput = ref<HTMLInputElement | null>(null)
 // 快捷键配置与在线录制状态
 const shortcutConfig = ref<ShortcutConfig>(shortcutService.getConfig())
 const isDesktop = ref(isDesktopApp())
+const isAutostart = ref(false)
 const recordingShortcutId = ref<keyof ShortcutMap | null>(null)
 const recordingShortcutPreview = ref('')
 const shortcutSavedToast = ref(false)
+
+async function checkAutostart() {
+  if (isDesktop.value) {
+    isAutostart.value = await isAutostartEnabled()
+  }
+}
+
+async function handleToggleAutostart() {
+  const next = !isAutostart.value
+  isAutostart.value = await setAutostartEnabled(next)
+}
 
 function startRecordingShortcut(id: keyof ShortcutMap) {
   recordingShortcutId.value = id
@@ -154,6 +166,7 @@ onMounted(() => {
   serverStore.loadConfig()
   themeService.init()
   tagService.init()
+  checkAutostart()
   window.addEventListener('keydown', onUnifiedModalKeyDown, true)
 })
 
@@ -452,7 +465,7 @@ function handleOpenUserGuide() {
               <button
                 v-if="!isEditing"
                 @click="startAddServer"
-                class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
+                class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/20 cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Plus class="w-3.5 h-3.5" />
                 <span>添加同步节点</span>
@@ -481,7 +494,7 @@ function handleOpenUserGuide() {
                 v-if="!serverStore.isStandalone"
                 @click="handleSyncToRemote"
                 :disabled="serverStore.isSyncing"
-                class="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                class="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <UploadCloud class="w-3.5 h-3.5" :class="{ 'animate-bounce': serverStore.isSyncing }" />
                 <span>{{ serverStore.isSyncing ? '同步中...' : '同步单机数据至远程节点' }}</span>
@@ -865,41 +878,65 @@ function handleOpenUserGuide() {
 
           <!-- 4. 全局快捷键与自定义热键 -->
           <section v-if="activeTab === 'shortcuts'" class="space-y-4">
-            <div class="flex items-center justify-between">
+            <!-- 顶部标题与快捷操作栏 -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-black/5 dark:border-white/5">
               <div>
                 <h3 class="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                  <Zap class="w-4 h-4 text-amber-500" />
-                  系统全局热键与快捷键配置
+                  <Zap class="w-4 h-4 text-amber-500 shrink-0" />
+                  <span class="whitespace-nowrap">系统全局热键与快捷键配置</span>
                 </h3>
-                <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">默认采用 Ctrl+Alt 组合键，点击任意键位可直接录制修改</p>
+                <p class="text-neutral-500 dark:text-neutral-400 text-[11px] mt-0.5">默认采用 Ctrl+Alt 组合键，点击任意键位可直接录制修改</p>
               </div>
 
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 shrink-0 flex-wrap">
                 <button
                   @click="handleTestAlarm"
-                  class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 text-xs transition-colors cursor-pointer font-medium"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 text-xs transition-colors cursor-pointer font-medium whitespace-nowrap shrink-0"
                   title="模拟待办到期，测试桌面便签自动唤醒与闹铃抖动"
                 >
-                  <BellRing class="w-3 h-3 animate-bell-ring" />
-                  <span>测试闹铃抖动</span>
+                  <BellRing class="w-3.5 h-3.5 animate-bell-ring shrink-0" />
+                  <span class="whitespace-nowrap">测试闹铃抖动</span>
                 </button>
                 <button
                   @click="handleResetShortcutDefaults"
-                  class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer font-medium whitespace-nowrap shrink-0"
                   title="恢复所有快捷键为系统默认值 (Ctrl+Alt+...)"
                 >
-                  <RotateCcw class="w-3 h-3" />
-                  <span>恢复默认</span>
+                  <RotateCcw class="w-3.5 h-3.5 shrink-0" />
+                  <span class="whitespace-nowrap">恢复默认</span>
                 </button>
                 <button
                   v-if="isDesktop"
-                  class="px-2 py-1 rounded-xl border text-[11px] transition-colors cursor-pointer font-medium"
+                  class="px-3 py-1.5 rounded-xl border text-xs transition-colors cursor-pointer font-medium whitespace-nowrap shrink-0"
                   :class="shortcutConfig.enabled ? 'bg-indigo-600/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 text-neutral-400'"
                   @click="handleToggleShortcutEnabled"
                 >
-                  {{ shortcutConfig.enabled ? '全局热键开启' : '点击开启全局热键' }}
+                  <span class="whitespace-nowrap">{{ shortcutConfig.enabled ? '全局热键开启' : '点击开启全局热键' }}</span>
                 </button>
               </div>
+            </div>
+
+            <!-- 开机自启动与桌面行为配置卡片 -->
+            <div class="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 flex items-center justify-between gap-3">
+              <div class="space-y-0.5">
+                <div class="font-medium text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Laptop class="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span class="text-xs font-semibold">开机自动启动</span>
+                  <span v-if="!isDesktop" class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-500/10 text-neutral-400">桌面端专属</span>
+                </div>
+                <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">
+                  随电脑开机自动在后台启动并于系统托盘常驻，保障待办到期提醒准时推送与快捷呼出
+                </p>
+              </div>
+
+              <button
+                v-if="isDesktop"
+                @click="handleToggleAutostart"
+                class="px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer font-medium whitespace-nowrap shrink-0"
+                :class="isAutostart ? 'bg-emerald-600/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 text-neutral-400'"
+              >
+                <span class="whitespace-nowrap">{{ isAutostart ? '开机自启已开启' : '点击开启自启' }}</span>
+              </button>
             </div>
 
             <!-- 保存反馈提示 -->
@@ -1062,7 +1099,7 @@ function handleOpenUserGuide() {
               <div class="flex items-center justify-between">
                 <div>
                   <div class="font-bold text-neutral-900 dark:text-white text-sm">AuraTask 客户端</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.5</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.6</div>
                 </div>
 
                 <button

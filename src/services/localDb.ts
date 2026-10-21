@@ -311,7 +311,7 @@ export const localDb = {
     return subtasks.filter(s => s.task_id === taskId).sort((a, b) => a.sort_order - b.sort_order)
   },
 
-  createSubtask(taskId: string, title: string): SubTask {
+  createSubtask(taskId: string, title: string, due_date?: string | null): SubTask {
     const subtasks = this.getAllSubtasks()
     const newSub: SubTask = {
       id: 'sub_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -320,6 +320,7 @@ export const localDb = {
       completed: false,
       sort_order: subtasks.filter(s => s.task_id === taskId).length,
       created_at: new Date().toISOString(),
+      due_date: due_date || null,
     }
 
     subtasks.push(newSub)
@@ -327,7 +328,7 @@ export const localDb = {
     return newSub
   },
 
-  updateSubtask(id: string, payload: { title?: string; completed?: boolean }): SubTask {
+  updateSubtask(id: string, payload: { title?: string; completed?: boolean; due_date?: string | null }): SubTask {
     const subtasks = this.getAllSubtasks()
     const idx = subtasks.findIndex(s => s.id === id)
     if (idx === -1) throw new Error('子任务未找到')

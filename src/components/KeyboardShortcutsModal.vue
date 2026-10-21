@@ -131,11 +131,11 @@ function formatKeyBadges(shortcutStr: string): string[] {
           <!-- 恢复默认按钮 -->
           <button
             @click="handleResetDefaults"
-            class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-xl text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
             title="恢复全部默认快捷键 (Ctrl+Alt+对应键位)"
           >
-            <RotateCcw class="w-3 h-3" />
-            <span>恢复默认</span>
+            <RotateCcw class="w-3 h-3 shrink-0" />
+            <span class="whitespace-nowrap">恢复默认</span>
           </button>
 
           <button class="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer transition-colors" @click="handleClose">
@@ -161,11 +161,11 @@ function formatKeyBadges(shortcutStr: string): string[] {
             </div>
             <button
               v-if="isDesktop"
-              class="px-2 py-0.5 rounded-lg border text-[11px] transition-colors cursor-pointer"
+              class="px-2.5 py-1 rounded-lg border text-xs transition-colors cursor-pointer font-medium whitespace-nowrap shrink-0"
               :class="config.enabled ? 'bg-indigo-600/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 text-neutral-400'"
               @click="handleToggleEnabled"
             >
-              {{ config.enabled ? '全局热键开启' : '点击开启全局热键' }}
+              <span class="whitespace-nowrap">{{ config.enabled ? '全局热键开启' : '点击开启全局热键' }}</span>
             </button>
           </div>
 

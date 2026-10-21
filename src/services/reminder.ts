@@ -3,6 +3,7 @@ import { useTaskStore } from '../stores/task'
 import type { TodoItem } from '../types/todo'
 import { sound } from './audio'
 import { wakeUpMiniWindow } from './desktop'
+import { localDb } from './localDb'
 
 const STORAGE_NOTIFIED_KEY = 'auratask_notified_due_tasks'
 const STORAGE_SNOOZED_KEY = 'auratask_snoozed_tasks'
@@ -82,6 +83,47 @@ class ReminderService {
       if (isDue) {
         newlyDueTasks.push(task)
       }
+    }
+
+    // 检查子步骤中的到期与提醒
+    try {
+      const allSubtasks = localDb.getAllSubtasks()
+      for (const sub of allSubtasks) {
+        if (sub.completed || !sub.due_date) continue
+
+        if (this.snoozedUntil[sub.id] && nowTime < this.snoozedUntil[sub.id]) {
+          continue
+        }
+
+        if (this.notifiedTasks[sub.id] === sub.due_date) {
+          continue
+        }
+
+        const isDue = this.isTaskDue(sub.due_date, now, todayStr)
+        if (isDue) {
+          const parentTask = taskStore.tasks.find(t => t.id === sub.task_id)
+          const pseudoTask: TodoItem = {
+            id: sub.id,
+            title: `[子步骤] ${sub.title}${parentTask ? ` · ${parentTask.title}` : ''}`,
+            description: parentTask ? `所属主待办：${parentTask.title}` : '子步骤到期',
+            completed: false,
+            priority: parentTask?.priority || 2,
+            category_id: parentTask?.category_id || 'inbox',
+            due_date: sub.due_date,
+            tags: ['子步骤'],
+            estimated_pomodoros: 1,
+            completed_pomodoros: 0,
+            kanban_status: 'todo',
+            eisenhower_quadrant: parentTask?.eisenhower_quadrant || 2,
+            sort_order: 0,
+            created_at: sub.created_at,
+            updated_at: sub.created_at,
+          }
+          newlyDueTasks.push(pseudoTask)
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to scan subtask due dates', e)
     }
 
     if (newlyDueTasks.length > 0) {

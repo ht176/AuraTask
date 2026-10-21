@@ -9,6 +9,7 @@ export interface SubTask {
   completed: boolean
   sort_order: number
   created_at: string
+  due_date?: string | null
 }
 
 export interface Task {
