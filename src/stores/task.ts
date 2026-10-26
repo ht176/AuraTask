@@ -17,6 +17,7 @@ export const useTaskStore = defineStore('task', {
     isLoading: false,
     stats: null as StatsData | null,
     isQuickAddOpen: false,
+    focusMiniInputTrigger: 0,
     isPomodoroOpen: false,
     isMiniMode: false,
     isShortcutsOpen: false,
@@ -284,6 +285,7 @@ export const useTaskStore = defineStore('task', {
     },
 
     async toggleMiniMode() {
+      this.isQuickAddOpen = false
       this.isMiniMode = !this.isMiniMode
       if (isDesktopApp()) {
         if (this.isMiniMode) {

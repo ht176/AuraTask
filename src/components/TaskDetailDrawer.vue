@@ -15,6 +15,7 @@ import {
 import { useTaskStore } from '../stores/task'
 import { api } from '../services/api'
 import { tagService, customTags } from '../services/tags'
+import DateTimePicker from './DateTimePicker.vue'
 import type { SubTask, PriorityLevel, KanbanStatus, EisenhowerQuadrant } from '../types/todo'
 
 const taskStore = useTaskStore()
@@ -131,6 +132,12 @@ function setQuickDate(offsetDays: number | null) {
   handleUpdateField({ due_date: task.value.due_date })
 }
 
+function handleUpdateDueDate(val: string | null) {
+  if (!task.value) return
+  task.value.due_date = val
+  handleUpdateField({ due_date: val })
+}
+
 function handleClose() {
   taskStore.selectedTaskId = null
 }
@@ -229,32 +236,19 @@ function handleClose() {
           </select>
         </div>
 
-        <!-- 截止日期 -->
+        <!-- 截止日期与具体时间 -->
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-neutral-400 flex items-center gap-1">
-              <Calendar class="w-3 h-3 text-amber-400" />
-              <span>截止日期</span>
-            </span>
-            <span
-              v-if="task.due_date"
-              class="text-[10px] text-neutral-500 hover:text-rose-400 cursor-pointer"
-              @click="setQuickDate(null)"
-            >
-              清除
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-neutral-400 flex items-center gap-1 text-xs font-medium">
+              <Calendar class="w-3.5 h-3.5 text-amber-400" />
+              <span>截止日期与时间</span>
             </span>
           </div>
-          <input
-            v-model="task.due_date"
-            type="date"
-            class="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white font-mono focus:outline-none"
-            @change="handleUpdateField({ due_date: task.due_date })"
+          <DateTimePicker
+            :model-value="task.due_date || null"
+            placeholder="设置截止日期与提醒时刻..."
+            @update:model-value="handleUpdateDueDate"
           />
-          <div class="flex items-center gap-1 mt-1 text-[10px]">
-            <button class="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-neutral-300 cursor-pointer transition-colors" @click="setQuickDate(0)">今天</button>
-            <button class="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-neutral-300 cursor-pointer transition-colors" @click="setQuickDate(1)">明天</button>
-            <button class="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-neutral-300 cursor-pointer transition-colors" @click="setQuickDate(3)">3天后</button>
-          </div>
         </div>
 
         <!-- 预估番茄数 -->
@@ -341,31 +335,24 @@ function handleClose() {
 
                 <!-- 步骤截止时间与提醒标签 -->
                 <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  <div v-if="editingSubtaskDueDateId === sub.id" class="flex items-center gap-1">
-                    <input
-                      type="datetime-local"
-                      v-model="subtaskDueDateInput"
-                      class="bg-black/40 border border-indigo-500/50 rounded-lg px-2 py-0.5 text-[10px] text-white focus:outline-none"
+                  <div v-if="editingSubtaskDueDateId === sub.id" class="w-full animate-in fade-in">
+                    <DateTimePicker
+                      :model-value="sub.due_date || null"
+                      placeholder="设置子步骤截止时间..."
+                      @update:model-value="(val) => {
+                        sub.due_date = val
+                        api.updateSubtask(sub.id, { due_date: val })
+                        editingSubtaskDueDateId = null
+                        taskStore.fetchTasks()
+                      }"
                     />
-                    <button
-                      @click="handleSaveSubDueDate(sub)"
-                      class="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] text-white cursor-pointer font-medium"
-                    >
-                      保存
-                    </button>
-                    <button
-                      @click="editingSubtaskDueDateId = null"
-                      class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-neutral-300 cursor-pointer"
-                    >
-                      取消
-                    </button>
                   </div>
                   <template v-else>
                     <span
                       v-if="sub.due_date"
-                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 cursor-pointer hover:bg-amber-500/25 transition-colors"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 cursor-pointer hover:bg-amber-500/25 transition-colors"
                       title="点击修改步骤截止时间与提醒"
-                      @click="openSubtaskDuePicker(sub)"
+                      @click="editingSubtaskDueDateId = sub.id"
                     >
                       <Calendar class="w-2.5 h-2.5" />
                       <span>{{ sub.due_date }}</span>
@@ -381,7 +368,7 @@ function handleClose() {
                       v-else
                       class="inline-flex items-center gap-1 text-[10px] text-neutral-500 hover:text-indigo-400 transition-colors cursor-pointer opacity-70 group-hover:opacity-100"
                       title="设置步骤截止时间与闹铃提醒"
-                      @click="openSubtaskDuePicker(sub)"
+                      @click="editingSubtaskDueDateId = sub.id"
                     >
                       <Calendar class="w-2.5 h-2.5" />
                       <span>设置截止提醒</span>
@@ -429,20 +416,14 @@ function handleClose() {
           </div>
 
           <!-- 新建步骤截止时间快速选框 -->
-          <div v-if="showNewSubDueDate" class="flex items-center gap-2 px-1 text-[11px] text-neutral-400 animate-in fade-in">
-            <span>步骤截止：</span>
-            <input
-              type="datetime-local"
-              v-model="newSubtaskDueDate"
-              class="bg-white/5 border border-white/10 rounded-lg px-2 py-0.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+          <div v-if="showNewSubDueDate" class="pt-1 animate-in fade-in">
+            <DateTimePicker
+              :model-value="newSubtaskDueDate || null"
+              placeholder="预设新步骤截止日期与时间..."
+              @update:model-value="(val) => {
+                newSubtaskDueDate = val || ''
+              }"
             />
-            <button
-              v-if="newSubtaskDueDate"
-              class="text-[10px] text-neutral-400 hover:text-rose-400 cursor-pointer"
-              @click="newSubtaskDueDate = ''"
-            >
-              清除
-            </button>
           </div>
         </div>
       </div>

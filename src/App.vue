@@ -128,13 +128,20 @@ onMounted(async () => {
   // 注册全局系统热键与系统托盘菜单动作响应
   await shortcutService.registerAll({
     onQuickAdd: () => {
-      taskStore.isQuickAddOpen = true
+      if (taskStore.isMiniMode) {
+        // 在迷你便签模式下，严格保持模式一致性，不弹常规界面的 QuickAddModal，直接聚焦便签输入框
+        taskStore.isQuickAddOpen = false
+        taskStore.focusMiniInputTrigger++
+      } else {
+        taskStore.isQuickAddOpen = true
+      }
       if (typeof window !== 'undefined') {
         window.focus()
       }
     },
     onToggleWindow: () => {},
     onToggleMini: () => {
+      taskStore.isQuickAddOpen = false
       taskStore.toggleMiniMode()
     },
     onTogglePomodoro: () => {

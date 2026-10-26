@@ -7,17 +7,27 @@ const STORAGE_KEYS = {
   POMODOROS: 'auratask_local_pomodoros',
 }
 
+// 内存级高速缓存，彻底避免高频重复反序列化带来的垃圾回收卡顿与性能损耗
+const memoryCache: Record<string, any> = {}
+
 function getStored<T>(key: string, defaultValue: T): T {
+  if (memoryCache[key] !== undefined) {
+    return memoryCache[key]
+  }
   try {
     const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : defaultValue
+    const parsed = raw ? JSON.parse(raw) : defaultValue
+    memoryCache[key] = parsed
+    return parsed
   } catch (e) {
     console.warn(`Failed to parse localStorage key ${key}`, e)
+    memoryCache[key] = defaultValue
     return defaultValue
   }
 }
 
 function setStored<T>(key: string, val: T): void {
+  memoryCache[key] = val
   try {
     localStorage.setItem(key, JSON.stringify(val))
   } catch (e) {

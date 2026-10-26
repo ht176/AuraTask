@@ -359,7 +359,7 @@ async function handleFileImport(e: Event) {
       <!-- 极简底部：仅保留版本号状态与设置入口，彻底告别拥挤与换行变形 -->
       <div class="pt-1 flex items-center justify-between text-xs">
         <div class="flex items-center gap-1.5">
-          <span class="font-mono text-[11px] text-neutral-400">v1.0.6</span>
+          <span class="font-mono text-[11px] text-neutral-400">v1.0.7</span>
 
           <!-- 状态徽标 -->
           <span

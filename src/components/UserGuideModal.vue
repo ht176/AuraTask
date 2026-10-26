@@ -57,7 +57,7 @@ function handleClose() {
           <div>
             <h2 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
               AuraTask 使用手册与操作指南
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 font-normal">v1.0.6 指南</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 font-normal">v1.0.7 指南</span>
             </h2>
             <p class="text-xs text-neutral-400">掌握高效专注的工作流，彻底告别琐碎拖延</p>
           </div>

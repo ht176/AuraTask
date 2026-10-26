@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Maximize2,
   Plus,
@@ -21,6 +21,7 @@ import type { Task } from '../types/todo'
 
 const taskStore = useTaskStore()
 const quickText = ref('')
+const quickInputRef = ref<HTMLInputElement | null>(null)
 const isDesktop = ref(isDesktopApp())
 const windowRef = ref<HTMLElement | null>(null)
 
@@ -31,6 +32,21 @@ const pendingTasks = computed(() => {
 function isTaskAlarming(taskId: string): boolean {
   return reminderService.activeAlarmTasks.value.some((t: Task) => t.id === taskId)
 }
+
+function focusQuickInput() {
+  nextTick(() => {
+    quickInputRef.value?.focus()
+    quickInputRef.value?.select()
+  })
+}
+
+// 响应全局快捷键触发的聚焦请求
+watch(
+  () => taskStore.focusMiniInputTrigger,
+  () => {
+    focusQuickInput()
+  }
+)
 
 // 监听闹铃抖动计数器，驱动便签小窗物理抖动 (GSAP)
 watch(
@@ -43,13 +59,28 @@ watch(
 )
 
 onMounted(() => {
+  focusQuickInput()
+  setTimeout(focusQuickInput, 50)
+  setTimeout(focusQuickInput, 150)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', focusQuickInput)
+  }
+
   // 若刚挂载时便已处于闹铃状态，立即抖动一次便签
   if (reminderService.isAlarming.value && windowRef.value) {
     animationService.shakeAlarmNote(windowRef.value)
   }
 })
 
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('focus', focusQuickInput)
+  }
+})
+
 async function handleRestore() {
+  // 严格重置快捷录入弹窗状态，确保回到常规界面时展示完整的任务视图，杜绝意外残留快捷弹窗
+  taskStore.isQuickAddOpen = false
   taskStore.isMiniMode = false
   if (isDesktop.value) {
     await exitMiniMode()
@@ -60,6 +91,7 @@ async function handleAdd() {
   if (!quickText.value.trim()) return
   await taskStore.createTaskFromNLP(quickText.value.trim(), 'inbox')
   quickText.value = ''
+  taskStore.isQuickAddOpen = false
 }
 
 async function handleToggleTask(taskId: string) {
@@ -183,6 +215,7 @@ function handleSnooze(taskId: string) {
       <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
         <Plus class="w-3 h-3 text-indigo-500 dark:text-indigo-400 shrink-0" />
         <input
+          ref="quickInputRef"
           v-model="quickText"
           type="text"
           placeholder="随手记待办 (回车保存)..."

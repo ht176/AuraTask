@@ -20,6 +20,7 @@ async function handleToggleMaximize() {
 }
 
 async function handleToggleMini() {
+  taskStore.isQuickAddOpen = false
   taskStore.isMiniMode = !taskStore.isMiniMode
   if (isDesktop.value) {
     if (taskStore.isMiniMode) {

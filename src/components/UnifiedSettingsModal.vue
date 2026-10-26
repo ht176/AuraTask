@@ -1099,7 +1099,7 @@ function handleOpenUserGuide() {
               <div class="flex items-center justify-between">
                 <div>
                   <div class="font-bold text-neutral-900 dark:text-white text-sm">AuraTask 客户端</div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.6</div>
+                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">当前系统版本：v1.0.7</div>
                 </div>
 
                 <button
